@@ -1,0 +1,99 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}
+Test Page
+{% endblock %}
+
+{% block content %}
+<div class="test-page-wrapper">
+    <div class="test-head">
+        <h3>Page : {{page.page_number}}</h3>
+        <div class="ttw" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
+            <img src="{% static 'images/running.gif' %}" width="40px" height="40px" alt="">
+            <p id="timer"><strong></strong></p>
+        </div>
+    </div>
+    <div class="test_body">
+        <div class="left-section">
+            <div class="image-wrapper">
+                <img src="{{ page.image.url }}" alt="Test Image" width="500px">
+            </div>
+        </div>
+        <div class="right-section">
+            <div class="question-wrapper">
+                <h4>Question:</h4>
+                <p>{{ page.question|safe }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="test-footer">
+        <div class="navigation-buttons">
+            <form action="" style="display: none;" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="page_number" value="{{page.page_number}}">
+            </form>
+            {% if show_previous_button %}
+            <a onclick="saveTime()" href="{% url 'view_test_page' test.id previous_page_number %}" class="btn-prev smbtn">Previous</a>
+            {% endif %}
+            {% if show_next_button %}
+            <a onclick="saveTime()" href="{% url 'view_test_page' test.id next_page_number %}" class="btn-next smbtn">Next</a>
+            {% endif %}
+            {% if show_done_button %}
+            <a href="{% url 'test_done_page' test.id %}" class="btn-next">Done</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script>
+    const current_test_id = String({{ test.id }}); // Ensure string for comparison
+    const pageNumber_Server = String({{ page.page_number }});
+    console.log()
+    const timePerPageFlag = {{ time_per_page }} === 'True' ? true: false; // Django boolean to JS
+    const totalTime = {{ total_time }}; // Time in seconds
+
+    // Retrieve stored values
+    const stored_test_id = localStorage.getItem("test_id");
+    const stored_page_number = localStorage.getItem("page_number");
+    const stored_time = localStorage.getItem("time_left");
+
+    let time_left = null;
+
+    // Use stored time only if test ID and page match
+    if (stored_test_id === current_test_id) {
+        time_left = stored_time !== null ? parseInt(stored_time) : null;
+    }
+
+    // Fallback to default time
+    let totalSeconds = time_left !== null ? time_left : totalTime;
+
+    const timerElement = document.getElementById('timer').getElementsByTagName('strong')[0];
+    const hiddenForm = document.querySelector('.navigation-buttons form');
+
+    function updateTimer() {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (totalSeconds > 0) {
+            totalSeconds--;
+            localStorage.setItem("time_left", totalSeconds);
+            localStorage.setItem("test_id", current_test_id);
+            localStorage.setItem("page_number", pageNumber_Server);
+        } else {
+            clearInterval(timerInterval);
+
+            if (timePerPageFlag) {
+                // Auto-submit form to move to next page
+                hiddenForm.submit();
+            } else {
+                // For full-test timing, optionally redirect or submit entire test
+                window.location.href = "{% url 'test_done_page' test.id %}";
+            }
+        }
+    }
+
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer(); // Initial display
+</script>
+{% endblock %}

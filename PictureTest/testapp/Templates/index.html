@@ -1,0 +1,92 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}
+Welcome
+{% endblock %}
+
+{% block content %}
+<div class="index-wrapper">
+  <h1>Welcome to the Picture Test Portal</h1>
+  <p class="intro">
+    This platform is designed for medical students and professionals to practice visual diagnosis.
+    Each test presents an image alongside a question. Please observe carefully and write your answers on paper.
+  </p>
+  <ul class="instructions">
+    <li>🧠 Review each image thoroughly</li>
+    <li>✍️ Write your answers on paper — no typing required</li>
+    <li>⏱️ Time may be limited per page or per test</li>
+    <li>📋 Return to dashboard to access active tests</li>
+  </ul>
+  <a href="{% url 'dashboard_page' %}" class="start-btn">Continue to Dashboard</a>
+</div>
+<style>
+    @media screen and (min-width: 768px) {
+  .index-wrapper {
+    max-width: 700px;
+    margin: 4rem auto;
+    padding: 2rem;
+    padding-top: 5px;
+    margin-top: 5px;
+    background-color: #fefefe;
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    animation: fadeSlideIn 0.7s ease-out;
+    text-align: center;
+  }
+
+  .index-wrapper h1 {
+    font-size: 2.5rem;
+    color: #007bff;
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+  }
+
+  .index-wrapper .intro {
+    font-size: 1.1rem;
+    color: #444;
+    margin-bottom: 1.5rem;
+  }
+
+  .instructions {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+  }
+
+  .instructions li {
+    font-size: 1rem;
+    color: #333;
+    margin: 0.5rem 0;
+    animation: fadeInItem 0.5s ease forwards;
+  }
+
+  .start-btn {
+    display: inline-block;
+    padding: 0.8rem 1.6rem;
+    background-color: #007bff;
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+
+  .start-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInItem {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}
+
+</style>
+{% endblock %}

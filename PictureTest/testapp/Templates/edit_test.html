@@ -1,0 +1,36 @@
+{% extends 'main.html' %}
+
+{% block title %}
+Edit Test
+{% endblock %}
+
+{% block content %}
+<div class="add-test-wrapper">
+    <h2>Edit Test</h2>
+    <div class="add-test-body">
+        <div class="left-section">
+
+        </div>
+        <div class="right-section">
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="field-wrapper">
+                    <label for="name">Test Name:</label>
+                    <input type="text" name="name" id="name" value="{{ test.name }}" required>
+                </div>
+                <div class="field-wrapper">
+                    <label for="test_type">Test Type:</label>
+                    <select name="test_type" id="test_type" required>
+                        {% for type in test_types %}
+                        <option value="{{ type.id }}" {% if type.id == test.test_type.id %}selected{% endif %}>{{ type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="buttons">
+                    <button type="submit">Save Changes</button>
+                    <a href="{% url 'setup_tests_page' type.id %}">Cancel</a>
+                </div>
+            </form>
+
+        </div>
+    </div>

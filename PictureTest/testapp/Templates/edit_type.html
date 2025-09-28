@@ -1,0 +1,53 @@
+{% extends 'main.html' %}
+{% load static %}
+{% block title %}
+Edit Type
+{% endblock %}
+
+{% block content %}
+<div class="add-test-wrapper" style="margin-bottom: 70px;">
+    <h2>Edit Test Type</h2>
+    <div class="add-test-body">
+        <div class="left-section">
+            <img src="{% static 'images/hh.jpg' %}" alt="" width="400px">
+        </div>
+        <div class="right-section">
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="field-wrapper">
+                    <label for="name">Type Name:</label>
+                    <input type="text" name="name" id="name" value="{{ test_type.name }}" required>
+                </div>
+                <div class="field-wrapper">
+                    <label for="timer_count">Time Allocated (in seconds):</label>
+                    <input type="number" name="timer_count" id="timer_count" value="{{ test_type.timer_count }}" required>
+                </div>
+                <div class="field-wrapper">
+                    <label for="unit">Time Unit Used: </label>
+                    <select name="unit" id="unit" required>
+                        <option value="seconds" {% if test_type.unit == "seconds" %}selected{% endif %}>Seconds</option>
+                        <option value="minutes" {% if test_type.unit == "minutes" %}selected{% endif %}>Minutes</option>
+                        <option value="hours" {% if test_type.unit == "hours" %}selected{% endif %}>Hours</option>
+                    </select>
+                </div>
+                <div class="field-wrapper">
+                    <label for="page_count">Number of Pages:</label>
+                    <input type="number" name="page_count" id="page_count" value="{{ test_type.page_count }}" required>
+                </div>
+                <div class="field-wrapper">
+                    <input type="checkbox" name="time_per_page" id="time_per_page" {% if test_type.time_per_page %}checked{% endif %}>
+                    <label for="time_per_page">Does the time indicated only apply per page</label>
+                </div>
+                <div class="field-wrapper">
+                    <label for="description">Description (optional):</label>
+                    <textarea name="description" id="description" cols="30" rows="10">{{ test_type.description }}</textarea>
+                <div class="buttons">
+                    <button type="submit">Save Changes</button>
+                    <a href="{% url 'setup_types_page' %}">Cancel</a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
