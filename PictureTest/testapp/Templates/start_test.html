@@ -9,10 +9,9 @@
     {% if not is_started %}
     <div class="test-header">
         <h2>{{ test.name }}</h2>
-        <p>Pages: {{ test.test_type.page_count }} </p>
-        <p>Time: {{ calculated_time }}</p>
+        <p>Time: {{ calculated_time }} minutes</p>
         <div class="test-actions">
-            {% if test.test_type.time_per_page %}
+            {% if test.time_per_page %}
             <a href="{% url 'view_test_2' test.id %}">Start Test</a>
             {% else %}
             <a href="{% url 'view_test_page' test.id page.page_number %}" class="btn-start">Start Test</a>
@@ -25,7 +24,7 @@
         <p>Pages: {{ test.test_type.page_count }} </p>
         <p>Time: {{ calculated_time }}</p>
         <div class="test-actions">
-            {% if test.type.time_per_page %}
+            {% if test.time_per_page %}
             <a href="{% url 'view_test_2' test.id %}" class="btn-continue">Continue Test</a>
             {% else %}
             <a href="{% url 'view_test_page' test.id page.page_number %}" class="btn-continue">Continue Test</a>

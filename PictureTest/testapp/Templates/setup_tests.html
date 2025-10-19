@@ -8,28 +8,25 @@ Setup
 {% block content %}
 <div class="setup-wrapper">
     <div class="aw3">
-        <a href="{% url 'setup_types_page' %}">{{type.name}}</a>
         <span> &rarr; </span>
-        <a href="{% url 'setup_tests_page' type.id %}">Tests</a>
+        <a href="{% url 'setup_tests_page' %}">Tests</a>
     </div>
     <div class="setup-body">
         <div class="items-wrapper">
             <div class="top">
-                <h2>All Tests of {{type.name}}</h2>
+                <h2>All Tests</h2>
                 <div class="links">
-                        <a href="{% url 'edit_type_page' type.id %}">Edit &#9998;</a>
-                    <a href="{% url 'add_test_page' type.id %}">New Test</a>
-                    <a href="{% url 'add_type_page' %}">New Test Type</a>
+                    <a href="{% url 'add_test_page' %}">New Test</a>
                 </div>
             </div>
             
             <div class="items-grid">
                 {% for test in active_tests %}
-                <a href="{% url 'setup_pages_page' type.id test.id %}" class="item-card">
+                <a href="{% url 'setup_pages_page' test.id %}" class="item-card">
                     <p class="test_name"><strong>{{ test.name }}</strong></p>
-                    <p>{{ test.test_type.name}}</p>
-                    <p><strong>Time Allocated: </strong>{{ test.test_type.timer_count }}</p>
-                    <p><strong>Pages: </strong>{{ test.test_type.page_count }}</p>
+                    <p>{{ test.name}}</p>
+                    <p><strong>Time Allocated: </strong>{{ test.timer_count }} {% if test.timer_count > 1 %}minutes{% else %}minute{% endif %}</p>
+                    <p><strong>Pages: </strong>{{ test.page_count }}</p>
                     <div class="checkbox-wrapper">
                         <input type="checkbox" class="card-checkbox" data-test-id="{{ test.id }}">
                     </div>

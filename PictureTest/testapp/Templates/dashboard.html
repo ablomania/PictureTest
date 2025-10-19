@@ -10,20 +10,18 @@ Dashboard
     <div class="tests-overview">
         <h3>Active Tests</h3>
         {% if active_tests %}
-            <ul class="tests-list">
+            <div class="tests-grid">
                 {% for test in active_tests %}
-                    <li class="test-item">
+                    <div class="test-item">
                         <h4>{{ test.name }}</h4>
-                        <p>Type: {{ test.test_type.name }}</p>
-                        <p>Pages: {{ test.test_type.page_count }}</p>
                         <div class="test-actions">
                             <a href="{% url 'start_test_page' test.id %}">Start Test</a>
                         </div>
-                    </li>
+                      </div>
                 {% endfor %}
-            </ul>
+                  </div>
         {% else %}
-            <p>No active tests available. <a href="{% url 'add_test' %}">Create a new test</a>.</p>
+            <p>No active tests available.</p>
         {% endif %}
     </div>
 </div>
@@ -32,12 +30,6 @@ Dashboard
 .dashboard-wrapper {
   padding: 1rem;
   margin: 1rem;
-}
-
-.tests-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
 }
 
 /* Tablet and desktop styles */
@@ -52,6 +44,7 @@ Dashboard
     animation: fadeIn 0.6s ease-out;
     margin-bottom: 100px;
     margin-top: 5px;
+    min-height: 450px;
   }
  
 
@@ -74,10 +67,11 @@ Dashboard
     }
   }
 
-  .tests-list {
+  .tests-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    justify-content: center;
   }
 
   .test-item {
@@ -88,6 +82,11 @@ Dashboard
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     animation: slideUp 0.5s ease-out;
+
+    h4 {
+      width: 100%;
+      text-align: center;
+    }
   }
 
   .test-item:hover {

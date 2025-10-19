@@ -6,6 +6,17 @@ Test Page
 {% endblock %}
 
 {% block content %}
+{% if instuctions %}
+<div class="instructions-wrapper">
+    <div class="instr-header">
+        <h1>{{test.name}}</h1>
+        <h3>{{test.timer_count}}</h3>
+        <p>Instructions</p>
+    </div>
+    <p>{{instructions}}</p>
+
+</div>
+{% else %}
 <div class="test-page-wrapper">
     <div class="test-head">
         <h3>Page : {{page.page_number}}</h3>
@@ -15,11 +26,13 @@ Test Page
         </div>
     </div>
     <div class="test_body">
+        {% if page.image %}
         <div class="left-section">
             <div class="image-wrapper">
                 <img src="{{ page.image.url }}" alt="Test Image" width="500px">
             </div>
         </div>
+        {% endif %}
         <div class="right-section">
             <div class="question-wrapper">
                 <h4>Question:</h4>
@@ -48,10 +61,9 @@ Test Page
 <script>
     const current_test_id = String({{ test.id }}); // Ensure string for comparison
     const pageNumber_Server = String({{ page.page_number }});
-    console.log()
-    const timePerPageFlag = {{ time_per_page }} === 'True' ? true: false; // Django boolean to JS
+    const timePerPageFlag = "{{ time_per_page }}" === 'True' ? true: false; // Django boolean to JS
     const totalTime = {{ total_time }}; // Time in seconds
-
+    console.log("Per page: ", timePerPageFlag)
     // Retrieve stored values
     const stored_test_id = localStorage.getItem("test_id");
     const stored_page_number = localStorage.getItem("page_number");
@@ -85,6 +97,7 @@ Test Page
 
             if (timePerPageFlag) {
                 // Auto-submit form to move to next page
+                localStorage.removeItem("time_left")
                 hiddenForm.submit();
             } else {
                 // For full-test timing, optionally redirect or submit entire test
@@ -96,4 +109,5 @@ Test Page
     const timerInterval = setInterval(updateTimer, 1000);
     updateTimer(); // Initial display
 </script>
+{% endif %}
 {% endblock %}
