@@ -7,24 +7,39 @@ Setup Pages
 {% block content %}
 <div class="setup-wrapper">
     <div class="aw3">
-        <a href="{% url 'setup_types_page' %}">{{type.name}}</a>
         <span> &rarr; </span>
-        <a href="{% url 'setup_tests_page' type.id %}">{{test.name}}</a>
+        <a href="{% url 'setup_tests_page' %}">Tests</a>
         <span> &rarr; </span>
-        <a href="{% url 'setup_pages_page' type.id test.id %}">Pages</a>
+        <span>{{test.name}}</span>
+        <span> &rarr; </span>
+        <a href="{% url 'setup_pages_page' test.id %}">Pages</a>
     </div>
     <div class="setup-body">
         <div class="items-wrapper">
             <div class="top">
                 <h2>Pages of {{test.name}}</h2>
                 <div class="links">
-                    <a href="{% url 'add_page_page' type.id test.id %}">New Page</a>
+                  <a href="{% url 'edit_test_page' test.id %}">Edit {{test.name}}</a>
+                  {% if not instruction %}
+                  <a href="{% url 'new_instruction' test.id %}">New Instruction</a>
+                  {% endif %}
+                  <a href="{% url 'add_page_page' test.id %}">New Page</a>
+                  {% if password %}
+                  <a href="{% url 'set_password' test.id %}">Change Password</a>
+                  {% else %}
+                  <a href="{% url 'set_password' test.id %}">Set password</a>
+                  {% endif %}
                 </div>
             </div>
-            
+            {% if instruction %}
+            <div class="instr">
+              <p>Instructions</p>
+              <a href="{% url 'edit_instruction_page' instruction.id %}">Edit</a>
+            </div>
+            {% endif %}
             <div class="items-grid">
                 {% for page in active_pages %}
-                <a href="{% url 'edit_page_page' type.id test.id page.id %}" class="item-card">
+                <a href="{% url 'edit_page_page' test.id page.id %}" class="item-card">
                     <p><strong>Page {{ page.page_number }}</strong></p>
                     <div class="checkbox-wrapper">
                         <input type="checkbox" class="card-checkbox" data-test-id="{{ page.id }}">

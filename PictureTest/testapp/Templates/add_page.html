@@ -1,97 +1,268 @@
 {% extends 'main.html' %}
+{% load static %}
 
 {% block title %}
 New Page
 {% endblock %}
 
 {% block content %}
+<!-- Quill CSS -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<!-- Quill JS -->
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
 <div class="add-page-wrapper">
     <h2>New Page of {{test.name}}</h2>
-    <div class="add-page-body">
-        <div class="left-section">
-            <form action="" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="field-wrapper">
-                    <label for="number">Page Number:</label>
-                    <!-- <input type="text" name="page_number" id="number" required> -->
-                     <select name="page_number" id="number" required>
-                        {% for number in available_page_numbers %}
-                            <option value="{{ number }}">{{ number }}</option>
-                        {% endfor %}
-                     </select>
-                </div>
-                <div class="field-wrapper">
-                    <label for="page-image">Upload Image</label>
-                    <input type="file" name="page_image" id="page-image" accept="image/*" required>
-                </div>
-                <div class="field-wrapper">
-                    <label for="page-question">Question</label>
-                    <textarea name="page_question" id="page-question" cols="30" rows="10"></textarea>
-                </div>
-                <div class="buttons">
-                    <button type="submit">Create Page</button>
-                    <a href="{% url 'setup_pages_page' type.id test.id %}" class="btn-cancel">Cancel</a>
-                </div>
-            </form>
-        </div>
-        <div class="right-section">
-            <div class="preview-wrapper">
-                <h3>Preview</h3>
-                <div class="preview-body">
-                    <div class="image-preview">
-                        <img id="preview-image" src="" alt="Image Preview" style="max-width:100%;max-height:200px;display:none;">
+    <!-- <div class="add-page-body"> -->
+        <form class="add-page-body" action="" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="field-wrapper">
+                <label for="number">Page Number</label>
+                <select name="page_number" id="number" required>
+                {% for number in available_page_numbers %}
+                    <option value="{{ number }}">{{ number }}</option>
+                {% endfor %}
+                </select>
+            </div>
+            <div class="questions-group">
+                <div class="question-wrapper">
+                    <input type="hidden" value="1" name="question_number" class="question-number">
+                    <input type="hidden" name="sub_" class="sub_count"  value="0" disabled>
+                    <div class="image-wrapper">
+                        <div class="image-preview">
+                            <img class="preview-image" src="{% static 'images/ttt.jpg' %}" alt="Image Preview">
+                        </div>
+                        <div class="image-input-wrapper">
+                            <!-- <label for="new-image-11">New Image</label> -->
+                            <input type="file" class="page-image page-image-hidden" name="page_image_1" onchange="previewImage(event)" placeholder="New Image" id="page-image" accept="image/*" style="display: none;" disabled>
+                        </div>
+                        <button type="button" class="image-button" onclick="addImage(event)">+</button>
+                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="deleteQuestion(event)">🗑</button>
+                        
                     </div>
-                    <div class="question-preview">
-                        <h4>Question:</h4>
-                        <p id="preview-question">No question added yet.</p>
+                    <div class="question-item">
+                        <div class="main-question">
+                            <div class="field-wrapper">
+                                <label for="question-1">Question 1</label>
+                                <!-- <input type="text" name="question_1" class="question" id="question-1"> -->
+                                <!-- Main Question -->
+                                <div class="quill-wrapper">
+                                    <div id="editor-question-1" class="quill-editor"></div>
+                                    <textarea name="question" id="question-1" style="display: none;"></textarea>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div class="sub-questions">
+                            <div class="field-wrapper sub-hidden" style="display: none;">
+                                <label for="sub"><span class="sub_label">sub</span></label>
+                                <!-- Sub Question -->
+                                    <div class="quill-wrapper sub-hidden" style="display: none;">
+                                        <div id="editor-sub-1" class="quill-editor"></div>
+                                        <textarea name="sub_"  class="sub-input" id="sub-1" disabled  style="display: none;"></textarea>
+                                    </div>
+                                <!-- <input type="text" class="sub-input" name="sub_1" id="sub" disabled> -->
+                            </div>
+                            <div class="buttons">
+                                <button type="button" onclick="createSub(event)">+ sub</button>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="buttons2">
+                    <button type="button" onclick="createQuestion()">+ question</button>
+                </div>
+                <div class="question-wrapper-hidden question-wrapper" style="display: none;">
+                    <input type="hidden" value="0" name="question_number" class="question-number" disabled>
+                    <input type="hidden" name="sub_" class="sub_count" value="0" disabled>
+                    <div class="image-wrapper">
+                        <div class="image-preview">
+                            <img class="preview-image" src="{% static 'images/ttt.jpg' %}" alt="Image Preview">
+                        </div>
+                        <div class="image-input-wrapper">
+                            <!-- <label for="new-image">New Image</label> -->
+                            <input type="file" class="page-image page-image-hidden" onchange="previewImage(event)" name="page_image_" placeholder="New Image" id="new-image" accept="image/*" style="display: none;" disabled>
+                        </div>
+                        <button type="button" class="image-button" onclick="addImage(event)">+</button>
+                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="deleteQuestion(event)">🗑</button>
+                    </div>
+                    <div class="question-item">
+                        <div class="main-question">
+                            <div class="field-wrapper">
+                                <label for="question" class="qnumber"></label>
+                                <!-- <input type="text" class="question" name="question_" id="question"> -->
+                                <div class="quill-wrapper">
+                                    <div id="editor-question-template" class="quill-editor"></div>
+                                    <textarea type="hidden" name="question" id="question-"  style="display: none;" disabled></textarea>
+                                </div>   
+                            </div>
+                        </div>
+                        <div class="sub-questions">
+                            <div class="field-wrapper sub-hidden" style="display: none;">
+                                <label for="sub" class="sub_label"></label>
+                                <!-- <input type="text" class="sub sub-input" name="sub_" id="sub" disabled> -->
+                                <div class="quill-wrapper sub-hidden" style="display: none;">
+                                    <div id="editor-sub-template" class="quill-editor"></div>
+                                    <textarea name="sub_" class="sub-input" id="sub-1" disabled  style="display: none;"></textarea>
+                                </div>
+                            </div>
+                            <div class="buttons">
+                                <button type="button" onclick="createSub(event)">+ sub</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+            <div class="buttons">
+                <button type="submit">Save</button>
+                <button type="button">Cancel</button>
+            </div>
+        </form>
 </div>
+        
+
 
 <script>
-// Preview the uploaded image
-document.getElementById('page-image').addEventListener('change', function(event) {
-    const preview = document.getElementById('preview-image');
-    const file = event.target.files[0];
+
+    let questions_count = [
+        {
+            index: 0,
+            number: 1,
+            active: true,
+            sub_level: 0,
+            image_count: 0
+        },
+        {
+            index: 1,
+            number: 2,
+            active: false,
+            sub_level: 0,
+            image_count: 0
+        },
+        {
+            index: 2,
+            number: 3,
+            active: false,
+            sub_level: 0,
+            image_count: 0
+        }
+    ]
+    
+
+    const quillInstances = {};
+    const quillConfigs = {
+  theme: 'snow',
+  modules: {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ 'script': 'sub'}, { 'script': 'super' }],
+      [{ 'header': [1, 2, 3, false] }],
+      ['clean']
+    ]
+  }
+};
+
+// Initialize static editors
+window.addEventListener('DOMContentLoaded', () => {
+  const staticQuestionEditor = new Quill('#editor-question-1', quillConfigs);
+  staticQuestionEditor.on('text-change', () => {
+    document.getElementById('question-1').value = staticQuestionEditor.root.innerHTML;
+  });
+  quillInstances['question_1'] = staticQuestionEditor;
+
+});
+
+
+
+    let undoList = [];
+    let redoList = [];
+    undoList.push("")
+    
+// Preview the uploaded image. Uses a data-preview-id on the input to find the correct image element.
+
+const previewImage = ({target}) => {
+    console.log("preview started")
+    const file = target.files && target.files[0];
+
+    // Prefer a linked preview via data attribute
+    const previewId = target.dataset.previewId;
+    let preview = null;
+    if (previewId) {
+        preview = document.querySelector(`[data-preview-id="${previewId}"]`);
+    }
+
+    // Fallback: find the first .preview-image within the same .image-wrapper
+    if (!preview) {
+        const wrapper = target.closest(".image-wrapper");
+        if (wrapper) preview = wrapper.querySelector('.preview-image');
+    }
+
+    if (!preview) return;
+
+    console.log("file: ", file)
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.src = e.target.result;
             preview.style.display = 'block';
+            // Hide the original static placeholder image (if it exists in this wrapper)
+            const wrapper = target.closest('.image-wrapper');
+            if (wrapper) {
+                // find the first preview-image that is not the one we're updating
+                const staticPreview = Array.from(wrapper.querySelectorAll('.preview-image')).find(img => img !== preview);
+                if (staticPreview) staticPreview.style.display = 'none';
+            }
+            // If the input had a preview id, make sure its preview-item is shown
+            if (previewId) {
+                try { showLinkedPreview(previewId); } catch (e) { console.warn(e); }
+            }
         }
         reader.readAsDataURL(file);
     } else {
-        preview.src = '';
+        preview.src = "";
         preview.style.display = 'none';
     }
-});
+}
 
-// Preview the question text
-// document.getElementById('page-question').addEventListener('input', function(event) {
-//     const previewQ = document.getElementById('preview-question');
-//     previewQ.textContent = event.target.value || 'No question added yet.';
-// });
-document.getElementById('page-question').addEventListener('input', function(event) {
-    const previewQ = document.getElementById('preview-question');
-    const value = event.target.value;
-
-    if (value.trim()) {
-        // Replace newline characters with <br> for HTML rendering
-        previewQ.innerHTML = value.replace(/\n/g, '<br>');
-    } else {
-        previewQ.innerHTML = 'No question added yet.';
-    }
-});
 
 </script>
 
 <style>
+/* Delete question button styling */
+.delete-question-btn {
+    background: #e57373;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    margin-left: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(229,115,115,0.15);
+    transition: background 0.2s, transform 0.1s;
+}
+.delete-question-btn:hover {
+    background: #c62828;
+    transform: scale(1.08);
+}
+.quill-editor {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.ql-editor {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap; /* preserves line breaks */
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Add to your styles.css */
-
-/* Layout for add-page-body */
-
 </style>
 {% endblock %}

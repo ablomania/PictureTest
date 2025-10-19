@@ -20,12 +20,12 @@ Setup Test Types
             </div>
             <div class="items-grid">
                 {% for type in active_types %}
-                <a href="{% url 'setup_tests_page' type.id %}" class="item-card">
+                <a href="{% url 'setup_tests_page' %}" class="item-card">
                     <p><strong>{{ type.name }}</strong></p>
                     <p><strong>Time Allocated: </strong>{{ type.timer_count }}</p>
                     <p><strong>Pages: </strong>{{ type.page_count }}</p>
                     <div class="checkbox-wrapper">
-                        <input type="checkbox" class="card-checkbox" data-test-id="{{ type.id }}">
+                        <input type="checkbox" class="card-checkbox" data-test-id="{{ }}">
                     </div>
                 </a>
                 {% endfor %}

@@ -19,18 +19,24 @@ Edit Test
                     <input type="text" name="name" id="name" value="{{ test.name }}" required>
                 </div>
                 <div class="field-wrapper">
-                    <label for="test_type">Test Type:</label>
-                    <select name="test_type" id="test_type" required>
-                        {% for type in test_types %}
-                        <option value="{{ type.id }}" {% if type.id == test.test_type.id %}selected{% endif %}>{{ type.name }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="page_count">Number of Pages:</label>
+                    <input type="number" name="page_count" id="page_count" value="{{ test.page_count }}" required>
+                </div>
+                <div class="field-wrapper">
+                    <label for="timer_count">Time Allocated (in minutes):</label>
+                    <input type="number" name="timer_count" id="timer_count" value="{{ test.timer_count }}" required>
+                </div>
+                <div class="field-wrapper">
+                    <input type="checkbox" name="time_per_page" id="time_per_page" {% if test.time_per_page %}checked{% endif %}>
+                    <label for="time_per_page">Does the time indicated only apply per page</label>
                 </div>
                 <div class="buttons">
                     <button type="submit">Save Changes</button>
-                    <a href="{% url 'setup_tests_page' type.id %}">Cancel</a>
+                    <a href="{% url 'setup_tests_page' %}">Cancel</a>
                 </div>
             </form>
 
         </div>
     </div>
+</div>
+{% endblock %}

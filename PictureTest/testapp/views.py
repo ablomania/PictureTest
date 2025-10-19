@@ -2,9 +2,85 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.urls import reverse
-from .models import Test, TestType, Page
+from .models import Test, Page, Instruction
+from .form_handlers import *
+import string, random, hashlib
 
 # Create your views here.
+
+from collections import defaultdict
+
+def hash_string(string, algorithm='sha256'):
+    if algorithm == 'sha256':
+        return hashlib.sha256(string.encode()).hexdigest()
+    elif algorithm == 'md5':
+        return hashlib.md5(string.encode()).hexdigest()
+    else:
+        raise ValueError('Unsupported algorithm')
+
+
+def random_string(length=255):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+
+
+def get_page_question_summary(page_id):
+    page = Page.objects.filter(id=page_id).first()
+    if not page:
+        return None
+
+    questions = Question.objects.filter(page=page, is_active=True).order_by("number")
+    question_ids = questions.values_list("id", flat=True)
+
+    # Preload related sub-questions and images
+    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids, is_active=True)
+    images = Images.objects.filter(question_id__in=question_ids)
+
+    # Build summary
+    summary = []
+    sub_map = defaultdict(list)
+    image_map = defaultdict(list)
+
+    for sub in sub_questions:
+        sub_map[sub.question_id].append(sub)
+
+    for img in images:
+        image_map[img.question_id].append(img)
+
+    indexOf = 0
+    # for question in questions:
+    #     q_id = question.id
+    #     summary.append({
+    #         "index": indexOf,
+    #         "number": question.number,
+    #         "sub_level": len(sub_map[q_id]),
+    #         "image_count": len(image_map[q_id]),
+    #     })
+    #     indexOf += 1
+    
+    questions_count = questions.count()
+    for x in range(0,3):
+        if x <= (questions_count-1):
+            question = questions[x]
+            summary.append({
+                "index": indexOf,
+                "number": question.number,
+                "active": "true",
+                "sub_level": len(sub_map[question.id]),
+                "image_count": len(image_map[question.id])
+            })
+        else:
+            summary.append({
+                "index": indexOf,
+                "number": indexOf + 1,
+                "active": "false",
+                "sub_level": 0,
+                "image_count": 0
+            })
+        indexOf += 1
+    return summary
+
 
 def index(request):
     template = loader.get_template("index.html")
@@ -38,7 +114,7 @@ def test_page(request, test_id, page_number):
     if not current_page:
         return HttpResponse("Page not found")
     total_pages = Page.objects.filter(test=test, is_active=True).count()
-    total_time = test.test_type.timer_count
+    total_time = test.timer_count * 60
     if Page.objects.filter(test=test, page_number__gt=page_number, is_active=True).exists():
         show_next_button = True
         next_page_number = Page.objects.filter(test=test, page_number__gt=page_number, is_active=True).order_by('page_number').first().page_number
@@ -50,6 +126,7 @@ def test_page(request, test_id, page_number):
         previous_page_number = Page.objects.filter(test=test, page_number__lt=page_number, is_active=True).order_by('-page_number').first().page_number
     else:
         show_previous_button = False
+    print("per page: ", test.time_per_page)
     template = loader.get_template("test_page.html")
     context = {
         "test": current_page.test,
@@ -76,8 +153,8 @@ def test_page2(request, test_id):
     if not test:
         return HttpResponse("Test not found")
     total_pages = Page.objects.filter(test=test).count()
-    total_time = test.test_type.timer_count
-    time_per_page = test.test_type.time_per_page
+    total_time = test.timer_count * 60
+    time_per_page = test.time_per_page
     
     if request.method == "POST":
         form_data = request.POST
@@ -91,7 +168,8 @@ def test_page2(request, test_id):
     else:
         current_page = Page.objects.filter(test=test, is_active=True).order_by("page_number").first()
     
-    
+    print("current page : ", current_page.page_number)
+    print("per page: ", test.time_per_page)
     template = loader.get_template("test_page.html")
     context = {
         "test": current_page.test,
@@ -114,25 +192,7 @@ def start_test(request, test_id):
     test = Test.objects.filter(id=test_id, is_active=True).first()
     if not test:
         return HttpResponse("Test not found or inactive")
-    test_type = TestType.objects.get(id=test.test_type_id)
-    total_time = test_type.timer_count
-    if test.test_type.unit == test_type.TimeUnit.Seconds:
-        calculated_time = total_time
-    elif test_type.unit == test_type.TimeUnit.Minutes:
-        calculated_time = total_time / 60
-        remainder = total_time % 60
-        calculated_time = f"{int(calculated_time)} : {remainder}"
-    else:
-        remainder = total_time % 3600
-        minutes = seconds = "00"
-        if remainder >= 60: 
-            minutes = str(int(remainder / 60))
-        print("mins ", len(minutes))
-        if len(minutes) == 1: minutes = f"0{minutes}"
-        seconds = str(remainder % 60)
-        if len(seconds) == 1: seconds = f"0{seconds}"
-        calculated_time = total_time / 3600
-        calculated_time = f"{int(calculated_time)} : {minutes} : {seconds}"
+    total_time = test.timer_count
     
     pages = Page.objects.filter(test=test, is_active=True).order_by('page_number')
     if not pages.exists():
@@ -142,7 +202,7 @@ def start_test(request, test_id):
     context = {
         "test": test,
         "page": first_page,
-        "calculated_time": calculated_time
+        "calculated_time": total_time
     }
     response = HttpResponse(template.render(context, request))
     return response
@@ -161,22 +221,24 @@ def test_done(request, test_id):
 
 
 # Add setups pages
-def add_test(request, type_id):
+def add_test(request):
     template = loader.get_template("add_test.html")
-    type = TestType.objects.filter(id=type_id).first()
-    if not type:
-        return HttpResponse("Tests type not found")
 
     if request.method == "POST":
         form_data = request.POST
         name = form_data.get("name")
+        page_count = form_data.get("page_count")
+        timer_count = form_data.get("timer_count")
+        time_per_page = form_data.get("time_per_page") == "on"
         new_test = Test(
-            name=name, 
-            test_type=type
+            name=name,
+            page_count=int(page_count),
+            time_per_page=time_per_page,
+            timer_count=int(timer_count)            
         )
         new_test.save()
+        return HttpResponseRedirect(reverse("setup_tests_page"))
     context = {
-        "type": type,
     }
     response = HttpResponse(template.render(context, request))
     return response
@@ -204,150 +266,164 @@ def add_test(request, type_id):
 #     return response
 
 
-def add_page(request, type_id, test_id):
+def add_page(request, test_id):
     template = loader.get_template("add_page.html")
     test = Test.objects.filter(id=test_id).first()
     if not test:
         return HttpResponse("Test not found")
-    type = TestType.objects.filter(id=type_id).first()
-    if not type:
-        return HttpResponse("Tests type not found")
     
     all_page_numbers = Page.objects.filter(test=test).values_list('page_number', flat=True)
-    total_pages = type.page_count
+    total_pages = test.page_count
     available_page_numbers = [i for i in range(1, total_pages + 1) if i not in all_page_numbers]
 
     if request.method == "POST":
         form_data = request.POST
-        print(form_data)
-        question = form_data.get("page_question")
-        page_number = form_data.get("page_number")
-        image = request.FILES.get("page_image")
-        new_page = Page(
-            test=test,
-            question=question,
-            page_number=page_number,
-            image=image
-            )
-        new_page.save()
-        return HttpResponseRedirect(reverse('setup_pages_page', args=[type.id, test.id]))
+        create_page(dict(form_data), test.id, request)
+        return HttpResponseRedirect(reverse('setup_pages_page', args=[test.id]))
     context = {
         "test": test,
-        "type": type,
         "available_page_numbers": available_page_numbers,
     }
     response = HttpResponse(template.render(context, request))
     return response
 
-def add_type(request):
-    template = loader.get_template("add_type.html")
+
+def add_instruction(request, test_id):
+    test = Test.objects.filter(id=test_id).first()
+    if not test:
+        return HttpResponse("Test not found")
+    template = loader.get_template("add_inst.html")
 
     if request.method == "POST":
         form_data = request.POST
-        name = form_data.get("name")
-        timer_count = form_data.get("timer_count")
-        time_per_page = form_data.get("time_per_page") == 'on'
-        page_count = form_data.get("page_count")
-        description = form_data.get("description")
-        unit = form_data.get("unit")
-        new_type = TestType(
-            name=name, 
-            timer_count=timer_count,
-            time_per_page=time_per_page,
-            page_count=page_count,
-            description=description,
-            unit=unit
-            )
-        new_type.save()
-        return HttpResponseRedirect(reverse('setup_types_page'))
-    context = {
+        new_instruction = Instruction(
+            test = test,
+            header = form_data.get("header", None),
+            body = form_data.get("body", None),
+            footer = form_data.get("footer", None)
+        )
+        new_instruction.save()
+        return HttpResponseRedirect(reverse('setup_pages_page', args=[test.id]))
 
+    context = {
+        "test": test,
     }
     response = HttpResponse(template.render(context, request))
     return response
 
+
+def add_password(request, test_id):
+    test = Test.objects.filter(id=test_id).first()
+    if not test:
+        return HttpResponse("Test not found")
+
+    template = loader.get_template("password.html")
+    password_exists = test.password != None
+    password_error = None
+    if request.method == "POST":
+        form_data = request.POST
+        new_password = form_data.get('password', None)
+        if password_exists:
+            old_password = form_data.get('old_password', None)
+            if old_password and new_password:
+                if hash_string(old_password, 'md5') == test.password:
+                    test.password = hash_string(new_password, 'md5')
+                    test.save()
+                    return HttpResponseRedirect(reverse('setup_pages_page', args=[test.id]))
+                else: password_error = "Old password is incorrect"
+        else:
+            test.password = hash_string(new_password, 'md5')
+            test.save()
+            return HttpResponseRedirect(reverse('setup_pages_page', args=[test.id]))
+    context = {
+        "test": test,
+        "password": password_exists,
+        "password_error": password_error
+    }
+    response = HttpResponse(template.render(context, request))
+    return response
+
+
+
+def edit_instruction(request, instruct_id):
+    instruction = Instruction.objects.filter(id=instruct_id).first()
+    test = instruction.test
+    if not instruction:
+        return HttpResponse("Instruction not found")
+    template = loader.get_template("add_inst.html")
+
+    if request.method == "POST":
+        form_data = request.POST
+        instruction.test = test,
+        instruction.header = form_data.get("header", None),
+        instruction.body = form_data.get("body", None),
+        instruction.footer = form_data.get("footer", None)
+        instruction.save()
+        return HttpResponseRedirect(reverse('setup_pages_page', args=[test.id]))
+
+    context = {
+        "test": test,
+        "instruction": instruction
+    }
+    response = HttpResponse(template.render(context, request))
+    return response
+
+
 # Edit setups
-def edit_test(request, type_id, test_id):
+def edit_test(request, test_id):
     test = Test.objects.filter(id=test_id).first()
     if not test:
         return HttpResponse("Test not found")
     template = loader.get_template("edit_test.html")
-    type = test.test_type
 
     if request.method == "POST":
         form_data = request.POST
-        name = form_data.get("name")
-        test_type_id = form_data.get("test_type")
-        test_type = TestType.objects.filter(id=test_type_id).first()
-        test.name = name
-        test.test_type = test_type
+        test.name = form_data.get("name")
+        test.page_count = form_data.get("page_count")
+        test.timer_count = form_data.get("timer_count")
+        test.time_per_page = form_data.get("time_per_page") == "on"
         test.save()
+        return HttpResponseRedirect(reverse("setup_pages_page", args=[test.id]))
     context = {
         "test": test,
-        "type": type,
     }
     response = HttpResponse(template.render(context, request))
     return response
 
-def edit_page(request, type_id, test_id, page_id):
+
+
+def edit_page(request, test_id, page_id):
     page = Page.objects.filter(id=page_id).first()
     if not page:
         return HttpResponse("Page not found")
     template = loader.get_template("edit_page.html")
     current_page = Page.objects.filter(id=page_id)
     test = page.test
-    type = test.test_type
     tests = Test.objects.filter(is_active=True)
+    question_summary = get_page_question_summary(page.id)
+
+    questions = Question.objects.filter(page=page).order_by("number")
+    question_ids = questions.values_list("id", flat=True)
+    images = Images.objects.filter(question_id__in=question_ids)
+    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids).order_by("number")   
 
     if request.method == "POST":
         form_data = request.POST
-        test_id = int(form_data.get("test"))
-        test = Test.objects.filter(id=test_id).first()
-        question = form_data.get("page_question")
-        page_number = form_data.get("page_number")
-        image = request.FILES.get("page_image")
-        page.test = test
-        page.question = question
-        page.page_number = page_number
-        if image:
-            page.image = image
-        page.save()
-        print(form_data)
-        return HttpResponseRedirect(reverse('setup_pages_page', args=[type.id, test.id]))
+        edit_some_page(dict(form_data), page.id, request)
+        return HttpResponseRedirect(reverse('setup_pages_page', args=[test.id]))
     context = {
         "page": page,
         "test": test,
-        "type": type,
         "tests": tests,
+        "questions": questions,
+        "sub_questions": sub_questions,
+        "images": images,
+        "question_summary": question_summary
     }
     response = HttpResponse(template.render(context, request))
     return response
 
-def edit_type(request, type_id):
-    test_type = TestType.objects.get(id=type_id)
-    template = loader.get_template("edit_type.html")
 
-    if request.method == "POST":
-        form_data = request.POST
-        name = form_data.get("name")
-        timer_count = form_data.get("timer_count")
-        time_per_page = form_data.get("time_per_page") == 'on'
-        page_count = form_data.get("page_count")
-        description = form_data.get("description")
-        unit = form_data.get("unit")
-        test_type.name = name
-        test_type.timer_count = timer_count
-        test_type.time_per_page = time_per_page
-        test_type.page_count = page_count
-        test_type.description = description
-        test_type.unit = unit
-        test_type.save()
-        return HttpResponseRedirect(reverse('setup_types_page'))
-    context = {
-        "test_type": test_type,
-    }
-    response = HttpResponse(template.render(context, request))
-    return response
 
 # Delete setups
 def delete_test(test_id):
@@ -361,59 +437,41 @@ def delete_page(page_id):
     page = Page.objects.get(id=page_id)
     page.delete()
 
-def delete_type(type_id):
-    test_type = TestType.objects.get(id=type_id)
-    test_type.delete()
+
 
 # setups
-def setup_tests(request, type_id):
-    type = TestType.objects.filter(id=type_id).first()
-    if not type:
-        return HttpResponse("Tests type not found")
-    active_tests = Test.objects.filter(is_active=True, test_type=type)
+def setup_tests(request):
+    active_tests = Test.objects.filter(is_active=True)
     
     if request.method == "POST":
         form_data = request.POST
         selected = form_data.get("selected_tests")
         for s in selected:
             delete_test(s)
-    inactive_tests = Test.objects.filter(is_active=False, test_type=type)
+    inactive_tests = Test.objects.filter(is_active=False)
     template = loader.get_template("setup_tests.html")
     context = {
         "setup": True,
         "active_tests": active_tests,
         "inactive_tests": inactive_tests,
-        "type": type,
     }
     response = HttpResponse(template.render(context, request))
     return response
 
-def setup_types(request):
-    active_types = TestType.objects.filter(is_active=True)
-    inactive_types = TestType.objects.filter(is_active=False)
-    template = loader.get_template("setup_types.html")
-    if request.method == "POST":
-        form_data = request.POST
-        print(form_data)
-        selected = form_data.get("selected_tests")
-        for s in selected:
-            print("Hello ", s)
-            delete_type(s)
-    context = {
-        "setup": True,
-        "active_types": active_types,
-        "inactive_types": inactive_types,
-    }
-    response = HttpResponse(template.render(context, request))
-    return response
 
-def setup_pages(request, type_id, test_id):
+
+def setup_pages(request, test_id):
     test = Test.objects.filter(id=test_id).first()
-    type = TestType.objects.filter(id=type_id).first()
-    if not test or not type:
+    
+    if not test:
         return HttpResponse("Test or Test type not found")
     active_pages = Page.objects.filter(test=test, is_active=True).order_by('page_number')
     template = loader.get_template("setup_pages.html")
+    instructions = Instruction.objects.filter(test=test)
+    instruction = None
+    if instructions.count() > 0:
+        instruction = instructions.first()
+    password_exists = test.password != None
     
     if request.method == "POST":
         form_data = request.POST
@@ -424,7 +482,8 @@ def setup_pages(request, type_id, test_id):
         "setup": True,
         "test": test,
         "active_pages": active_pages,
-        "type": type,
+        "instruction": instruction,
+        "password": password_exists
     }
     response = HttpResponse(template.render(context, request))
     return response
