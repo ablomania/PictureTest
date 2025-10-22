@@ -1,5 +1,3 @@
-
-
 const closeIt = (objId) => {
     const obj = document.querySelector(`.${objId}`) || document.getElementById(objId);
     obj.style.display = "none";
@@ -12,20 +10,34 @@ const openIt = (objId) => {
     (document.getElementById(objId) || document.querySelector(`.${objId}`)).style.display = "flex";
 }
 
+const openDeleteQuestionModal = ({target}) => {
+    const wrapper = target.closest(".question-wrapper");
+    const ref = wrapper.querySelector(".question-number");
+    const questionNumber = ref.value;
+    const modal = document.getElementById('delete-question-modal');
+    const questionNumberInput = modal.querySelector("input[name='qnm2']");
+    questionNumberInput.value = questionNumber;
+    modal.querySelector(".qnm").textContent = questionNumber;
+    modal.style.display = 'flex';
+}
+
 const gotoPage = (url) => {
     window.location.href = url;
 }
 
 
-function deleteQuestion(event) {
-    const btn = event.target.closest('.delete-question-btn');
-    const questionWrapper = btn.closest('.question-wrapper');
-    if (!questionWrapper) return;
+function deleteQuestion() {
+    let questionNumberInput = document.querySelector("input[name='qnm2']");
+    let questionNumber = questionNumberInput ? questionNumberInput.value : null;
+    if (!questionNumber) return;
+    const questionNumberInputs = Array.from(document.querySelectorAll(".question-number"));
+    const targetInput = questionNumberInputs.find(input => input.value === questionNumber);
 
-    // Remove the question DOM node
-    questionWrapper.remove();
-
-    // Count active questions
+    if (targetInput) {
+    const wrapper = targetInput.closest('.question-wrapper');
+    if (wrapper) wrapper.remove();
+    }
+    
     const activeQuestions = questions_count.filter(q => q.active);
     const activeCount = activeQuestions.length;
 
@@ -40,7 +52,6 @@ function deleteQuestion(event) {
     // Renumber and rename all visible question wrappers
     const mainNode = document.querySelector('.questions-group');
     const wrappers = Array.from(mainNode.querySelectorAll('.question-wrapper')).filter(w => w.style.display !== 'none');
-
     wrappers.forEach((wrapper, idx) => {
         const newNum = idx + 1;
 
@@ -265,20 +276,17 @@ const createQuestion = () => {
 const createSub = ({ target }) => {
   const wrapper = target.closest('.question-wrapper');
   const qNum = Number(wrapper.querySelector('.question-number').value);
-  const question = questions_count.find(q => q.number === qNum);
-  if (!question || question.sub_level >= 6) return;
+  const index = questions_count.findIndex(q => q.number === qNum);
+  if (index === -1 || questions_count[index].sub_level >= 6) return;
 
   const subQuestions = wrapper.querySelector('.sub-questions');
   const template = subQuestions.querySelector('.sub-hidden');
   const buttons = subQuestions.querySelector('.buttons');
   const clone = template.cloneNode(true);
   const subEditorDiv = clone.querySelector('.quill-editor');
-  subEditorDiv.innerHTML = ''; // Clear any existing Quill markup
-  const subLevel = question.sub_level + 1;
-  subEditorDiv.id = 'editor-sub-' + qNum + '-' + subLevel;
-  subEditorDiv.style.display = 'block';
-
   const alpha = { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e', 6: 'f' };
+
+  const subLevel = questions_count[index].sub_level + 1;
 
   clone.style.display = 'flex';
   clone.className = 'field-wrapper';
@@ -292,25 +300,26 @@ const createSub = ({ target }) => {
   subInput.disabled = false;
   subInput.name = 'sub_' + qNum;
   subInput.id = 'sub-' + qNum + '-' + subLevel;
+
+  // Update subCounter
   const subCounter = wrapper.querySelector('.sub_count');
   subCounter.value = subLevel;
-  subCounter.name = "subcount_" + qNum;
+  subCounter.name = 'subcount_' + qNum;
   subCounter.disabled = false;
 
   // Update editor
-//   const subEditorDiv = clone.querySelector('.quill-editor');
-  clone.querySelector(".quill-wrapper").style.display = "block";
+  clone.querySelector('.quill-wrapper').style.display = 'block';
   subEditorDiv.id = 'editor-sub-' + qNum + '-' + subLevel;
   subEditorDiv.style.display = 'block';
+  subEditorDiv.innerHTML = '';
 
   // Insert into DOM before initializing Quill
   subQuestions.insertBefore(clone, buttons);
-  const subQuill = new Quill('#editor-sub-' + qNum + '-' + subLevel, quillConfigs);
+  const subQuill = new Quill('#' + subEditorDiv.id, quillConfigs);
   subQuill.on('text-change', () => {
     subInput.value = subQuill.root.innerHTML;
   });
   quillInstances['sub_' + qNum + '_' + subLevel] = subQuill;
-    
 
   // Add delete button
   const delBtn = document.createElement('button');
@@ -337,25 +346,18 @@ const createSub = ({ target }) => {
   delBtn.onmouseout = () => { delBtn.style.background = '#e57373'; delBtn.style.transform = 'none'; };
 
   delBtn.addEventListener('click', () => {
-    clone.remove();
-    question.sub_level = Math.max(0, question.sub_level - 1);
-    questions_count[question.index].sub_level -= 1;
-    if (question.sub_level < 6) buttons.style.display = 'block';
-
-    const wrappers = Array.from(subQuestions.querySelectorAll('.field-wrapper')).filter(w => w.style.display !== 'none');
-    wrappers.forEach((w, idx) => {
-      const label = w.querySelector('.sub_label');
-      if (label) label.textContent = alpha[idx + 1];
-    });
-    console.log("sub-level after deletion:", questions_count[question.index].sub_level);
-  });
+    openDeleteSubModal(clone, wrapper, subQuestions, buttons, subCounter, qNum, index, alpha);
+});
 
   clone.appendChild(delBtn);
 
-  if (question.subLevel >= 6) buttons.style.display = 'none';
-  questions_count[question.index].sub_level += 1;
-  console.log("sub-level after addition:", questions_count[question.index].sub_level);
+  // Finalize sub-level update
+  questions_count[index].sub_level += 1;
+  if (questions_count[index].sub_level >= 6) buttons.style.display = 'none';
+
+  console.log('sub-level after addition:', questions_count[index].sub_level);
 };
+
 
 
 const makeBold = () => {
@@ -497,3 +499,110 @@ const makeUnderLine = () => {
     // Set the preview object
     document.getElementById("preview-question").innerHTML = newText;
 }
+
+let pendingSubDelete = null;
+
+function openDeleteSubModal(clone, wrapper, subQuestions, buttons, subCounter, qNum, index, alpha) {
+    pendingSubDelete = {clone, wrapper, subQuestions, buttons, subCounter, qNum, index, alpha};
+    document.getElementById('delete-sub-modal').style.display = 'flex';
+}
+
+function deleteSubQuestion() {
+    if (!pendingSubDelete) return;
+    const {clone, wrapper, subQuestions, buttons, subCounter, qNum, index, alpha} = pendingSubDelete;
+
+    // Remove the clicked sub-question
+    clone.remove();
+
+    // Update sub_level
+    questions_count[index].sub_level = Math.max(0, questions_count[index].sub_level - 1);
+
+    // Show buttons if limit not reached
+    if (questions_count[index].sub_level < 6) buttons.style.display = 'block';
+
+    // Get all remaining sub-question wrappers
+    const wrappers = Array.from(subQuestions.querySelectorAll('.field-wrapper')).filter(w => w.style.display !== 'none');
+
+    // Clear all Quill instances for this question
+    Object.keys(quillInstances).forEach(key => {
+      if (key.startsWith('sub_' + qNum + '_')) {
+        quillInstances[key].off('text-change');
+        console.log(quillInstances[key]);
+        delete quillInstances[key];
+      }
+    });
+
+    // Reinitialize all remaining sub-questions
+    wrappers.forEach((w, idx) => {
+      const level = idx + 1;
+      const label = w.querySelector('.sub_label');
+      const subInput = w.querySelector('textarea');
+      const subEditorDiv = w.querySelector('.quill-editor');
+      w.querySelectorAll('.ql-toolbar').forEach(tb => tb.remove()); // Remove existing toolbars
+      let existingContent = ''; // To store existing content
+      if (label) label.textContent = alpha[level];
+      if (subInput) {
+        subInput.name = 'sub_' + qNum;
+        subInput.id = 'sub-' + qNum + '-' + level;
+        existingContent = subInput.value; // Store existing content
+      }
+      if (subEditorDiv) {
+        subEditorDiv.id = 'editor-sub-' + qNum + '-' + level;
+        subEditorDiv.innerHTML = '';
+
+        const newQuill = new Quill('#' + subEditorDiv.id, quillConfigs);
+        newQuill.root.innerHTML = existingContent; // Restore content
+        newQuill.on('text-change', () => {
+          subInput.value = newQuill.root.innerHTML;
+        });
+        quillInstances['sub_' + qNum + '_' + level] = newQuill;
+      }
+    });
+
+    // Update subCounter
+    subCounter.value = wrappers.length;
+    subCounter.name = 'subcount_' + qNum;
+
+    console.log('sub-level after deletion:', questions_count[index].sub_level);
+
+    pendingSubDelete = null;
+  };
+
+function confirmDeleteSubQuestion() {
+    if (pendingSubDelete) {
+        deleteSubQuestion(
+            pendingSubDelete.clone,
+            pendingSubDelete.wrapper,
+            pendingSubDelete.subQuestions,
+            pendingSubDelete.buttons,
+            pendingSubDelete.subCounter,
+            pendingSubDelete.qNum,
+            pendingSubDelete.index,
+            pendingSubDelete.alpha
+        );
+        pendingSubDelete = null;
+        document.getElementById('delete-sub-modal').style.display = 'none';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  // ...existing Quill initialization code...
+
+  // After quill editors are ready, attach modal delete handlers to static sub delete buttons
+  const staticDeleteBtns = document.querySelectorAll('.static-delete-sub-btn');
+  staticDeleteBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const field = btn.closest('.field-wrapper');
+      if (!field) return;
+      const subQuestions = field.closest('.sub-questions');
+      const wrapper = field.closest('.question-wrapper');
+      const qNum = Number(wrapper.querySelector('.question-number').value);
+      const index = questions_count.findIndex(q => q.number === qNum);
+      const buttons = subQuestions.querySelector('.buttons');
+      const subCounter = wrapper.querySelector('.sub_count');
+      const alpha = {1: 'a',2:'b',3:'c',4:'d',5:'e',6:'f'};
+      // Open confirmation modal with context
+      openDeleteSubModal(field, wrapper, subQuestions, buttons, subCounter, qNum, index, alpha);
+    });
+  });
+});

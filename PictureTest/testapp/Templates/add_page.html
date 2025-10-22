@@ -37,7 +37,7 @@ New Page
                             <input type="file" class="page-image page-image-hidden" name="page_image_1" onchange="previewImage(event)" placeholder="New Image" id="page-image" accept="image/*" style="display: none;" disabled>
                         </div>
                         <button type="button" class="image-button" onclick="addImage(event)">+</button>
-                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="deleteQuestion(event)">🗑</button>
+                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="openDeleteQuestionModal(event)">🗑</button>
                         
                     </div>
                     <div class="question-item">
@@ -70,7 +70,7 @@ New Page
                     </div>
                 </div>
                 <div class="buttons2">
-                    <button type="button" onclick="createQuestion()">+ question</button>
+                    <button type="button" onclick="createQuestion(), displayAddQuestionButtons()">+ question</button>
                 </div>
                 <div class="question-wrapper-hidden question-wrapper" style="display: none;">
                     <input type="hidden" value="0" name="question_number" class="question-number" disabled>
@@ -84,7 +84,7 @@ New Page
                             <input type="file" class="page-image page-image-hidden" onchange="previewImage(event)" name="page_image_" placeholder="New Image" id="new-image" accept="image/*" style="display: none;" disabled>
                         </div>
                         <button type="button" class="image-button" onclick="addImage(event)">+</button>
-                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="deleteQuestion(event)">🗑</button>
+                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="openDeleteQuestionModal(event)">🗑</button>
                     </div>
                     <div class="question-item">
                         <div class="main-question">
@@ -115,11 +115,33 @@ New Page
             </div>
             <div class="buttons">
                 <button type="submit">Save</button>
-                <button type="button">Cancel</button>
+                <button type="button" onclick="gotoPage(`{% url 'setup_pages_page' test.id %}`)">Cancel</button>
             </div>
         </form>
 </div>
-        
+
+<div id="delete-question-modal" style="display: none;">
+    <div class="inner">
+        <input type="hidden" name="qnm2">
+        <h2>Are You Sure?</h2>
+        <p><strong>Task: </strong> Delete Question <span class="qnm"></span></p>
+        <div class="buttons">
+            <button type="button" onclick="deleteQuestion(), closeIt('delete-question-modal')">Yes</button>
+            <button type="button" onclick="closeIt('delete-question-modal')">No</button>
+        </div>
+    </div>
+</div>
+       
+<div id="delete-sub-modal" style="display:none;">
+    <div class="inner">
+        <h2>Are You Sure?</h2>
+        <p>Delete this sub-question?</p>
+        <div class="buttons">
+            <button type="button" onclick="confirmDeleteSubQuestion()">Yes</button>
+            <button type="button" onclick="document.getElementById('delete-sub-modal').style.display='none'">No</button>
+        </div>
+    </div>
+</div>
 
 
 <script>
@@ -178,6 +200,17 @@ window.addEventListener('DOMContentLoaded', () => {
     let redoList = [];
     undoList.push("")
     
+
+const displayAddQuestionButtons = () => {
+    // Set Add question button visibility based on max questions
+    const addQuestionBtn = document.querySelector('.buttons2');
+    const activeQuestions = questions_count.filter(q => q.active);
+    addQuestionBtn.style.display = activeQuestions.length >= 3 ? 'none' : 'flex';
+}
+window.onload = function() {
+    displayAddQuestionButtons();
+};
+
 // Preview the uploaded image. Uses a data-preview-id on the input to find the correct image element.
 
 const previewImage = ({target}) => {
@@ -255,6 +288,31 @@ const previewImage = ({target}) => {
   white-space: normal;
 }
 
+.question-wrapper {
+    position: relative;
+}
+
+.delete-question-btn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+
+#delete-question-modal, #delete-sub-modal{
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    flex-direction: column;
+    justify-content: center;
+
+    .inner {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
 .ql-editor {
   word-wrap: break-word;
   overflow-wrap: break-word;

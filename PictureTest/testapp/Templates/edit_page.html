@@ -64,13 +64,13 @@ Edit Page
                         </div>
                         
                         <button type="button" class="image-button" id="image-button-{{question.number}}" onclick="addImage(event)">+</button>
-                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="deleteQuestion(event)">🗑</button>
+                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="openDeleteQuestionModal(event)">🗑</button>
                         
                     </div>
                     <div class="question-item">
                         <div class="main-question">
                             <div class="field-wrapper">
-                                <label for="question-1">Question {{ question.number }}</label>
+                                <label for="question-1" class="qnumber">Question {{ question.number }}</label>
                                 <!-- <input type="text" name="question_1" class="question" id="question-1"> -->
                                 <!-- Main Question -->
                                 <div class="quill-wrapper">
@@ -121,7 +121,7 @@ Edit Page
                 </div>
                 {% endfor %}
                 <div class="buttons2">
-                    <button type="button" onclick="createQuestion()">+ question</button>
+                    <button type="button" onclick="createQuestion(), displayAddQuestionButtons()">+ question</button>
                 </div>
                 <div class="question-wrapper-hidden question-wrapper" style="display: none;">
                     <input type="hidden" value="0" name="question_number" class="question-number" disabled>
@@ -135,7 +135,7 @@ Edit Page
                             <input type="file" class="page-image page-image-hidden" onchange="previewImage(event)" name="page_image_" placeholder="New Image" id="new-image" accept="image/*" style="display: none;" disabled>
                         </div>
                         <button type="button" class="image-button" onclick="addImage(event)">+</button>
-                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="deleteQuestion(event)">🗑</button>
+                        <button type="button" class="delete-question-btn" title="Delete this question" onclick="openDeleteQuestionModal(event)">🗑</button>
                     </div>
                     <div class="question-item">
                         <div class="main-question">
@@ -166,25 +166,32 @@ Edit Page
             </div>
             <div class="buttons">
                 <button type="submit">Save</button>
-                <button type="button">Cancel</button>
+                <button type="button" onclick="gotoPage(`{% url 'setup_pages_page' test.id %}`)">Cancel</button>
             </div>
         </form>
 </div>
 
-<div class="question-modal">
-    <div>
+<div id="delete-question-modal" style="display: none;">
+    <div class="inner">
         <input type="hidden" name="qnm2">
         <h2>Are You Sure?</h2>
         <p><strong>Task: </strong> Delete Question <span class="qnm"></span></p>
         <div class="buttons">
-            <button type="button" onclick="deleteQuestion()">Yes</button>
-            <button type="button" onclick="closeIt('question-modal')">No</button>
+            <button type="button" onclick="deleteQuestion(), closeIt('delete-question-modal')">Yes</button>
+            <button type="button" onclick="closeIt('delete-question-modal')">No</button>
         </div>
     </div>
 </div>
 
-<div class="sub-modal">
-
+<div id="delete-sub-modal" style="display:none;">
+    <div class="inner">
+        <h2>Are You Sure?</h2>
+        <p>Delete this sub-question?</p>
+        <div class="buttons">
+            <button type="button" onclick="confirmDeleteSubQuestion()">Yes</button>
+            <button type="button" onclick="document.getElementById('delete-sub-modal').style.display='none'">No</button>
+        </div>
+    </div>
 </div>
         
 
@@ -244,38 +251,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Store instance
     quillInstances[editorId] = quill;
-  });
-  console.log("ins", quillInstances)
-    // After quill editors are ready, attach delete handlers to any static sub delete buttons
-    const staticDeleteBtns = document.querySelectorAll('.static-delete-sub-btn');
-    staticDeleteBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const field = btn.closest('.field-wrapper');
-            if (!field) return;
-            const subQuestions = field.closest('.sub-questions');
-            const wrapper = field.closest('.question-wrapper');
-            const qNum = Number(wrapper.querySelector('.question-number').value);
-            const questionObj = questions_count.find(q => q.number === qNum);
-            // remove the field
-            field.remove();
-            // update model
-            if (questionObj) {
-                questionObj.sub_level = Math.max(0, (questionObj.sub_level || 1) - 1);
-            }
-            // show +sub button if under limit
-            const buttons = subQuestions.querySelector('.buttons');
-            if (buttons && questionObj && questionObj.sub_level < 6) buttons.style.display = 'block';
-            // renumber remaining subs
-            const alpha = {1: 'a',2:'b',3:'c',4:'d',5:'e',6:'f'};
-            const wrappers = Array.from(subQuestions.querySelectorAll('.field-wrapper')).filter(w => w.style.display !== 'none');
-            wrappers.forEach((w, idx) => {
-                const label = w.querySelector('.sub_label');
-                if (label) label.textContent = alpha[idx+1];
-                const ta = w.querySelector('textarea.sub-input');
-                if (ta) ta.name = 'sub_' + qNum;
-            });
-        });
-    });
+  });    
 });
 
 
@@ -359,6 +335,13 @@ const restoreImage = (imageId, {target}, delBID) => {
 
 }
 
+const displayAddQuestionButtons = () => {
+    // Set Add question button visibility based on max questions
+    const addQuestionBtn = document.querySelector('.buttons2');
+    const activeQuestions = questions_count.filter(q => q.active);
+    addQuestionBtn.style.display = activeQuestions.length >= 3 ? 'none' : 'flex';
+}
+
 window.onload = function() {
     questions_count.forEach(question => {
         let button = document.getElementById(`image-button-${question.number}`);
@@ -371,6 +354,7 @@ window.onload = function() {
         }
         
     })
+    displayAddQuestionButtons()
 }
 
 // Preview the question text
@@ -543,6 +527,22 @@ window.onload = function() {
     position: absolute;
     right: 5px;
     top: 5px;
+}
+
+#delete-question-modal, #delete-sub-modal{
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    flex-direction: column;
+    justify-content: center;
+
+    .inner {
+        margin-left: auto;
+        margin-right: auto;
+    }
 }
 
 /* delete sub button */

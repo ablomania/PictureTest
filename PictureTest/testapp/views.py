@@ -216,7 +216,7 @@ def start_test(request, test_id):
         return HttpResponse("Test not found or inactive")
     total_time = test.timer_count
     
-    instruction = Instruction.objects.get(test_id=test.id)
+    instruction = Instruction.objects.filter(test_id=test.id).first()
     pages = Page.objects.filter(test=test, is_active=True).order_by('page_number')
     if not pages.exists():
         return HttpResponse("No pages found for this test")

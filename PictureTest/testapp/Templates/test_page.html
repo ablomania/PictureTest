@@ -6,17 +6,6 @@ Test Page
 {% endblock %}
 
 {% block content %}
-{% if instuctions %}
-<div class="instructions-wrapper">
-    <div class="instr-header">
-        <h1>{{test.name}}</h1>
-        <h3>{{test.timer_count}}</h3>
-        <p>Instructions</p>
-    </div>
-    <p>{{instructions}}</p>
-
-</div>
-{% else %}
 <div class="test-page-wrapper">
     <div class="test-head">
         <h3>Page : {{page.page_number}}</h3>
@@ -27,35 +16,39 @@ Test Page
     </div>
     <div class="test_body">
         {% for question in questions %}
-        {% if images %}
-        <div class="left-section">
-            {% for image in images %}
-            {% if image.question.id == question.id %}
-            <div class="image-wrapper">
-                <img src="{{ image.image.url }}" alt="Test Image" width="300px" height="300px">
+        <div class="test-content">
+            
+            {% if images %}
+            <div class="left-section">
+                {% for image in images %}
+                {% if image.question.id == question.id %}
+                <div class="image-wrapper">
+                    <img src="{{ image.image.url }}" alt="Test Image" width="300px" height="300px">
+                </div>
+                {% endif %}
+                {% endfor %}
             </div>
             {% endif %}
-            {% endfor %}
-        </div>
-        {% endif %}
-        <div class="right-section">
-            <div class="question-wrapper">
-                {% for question in questions %}
-                <div class="question">
-                    <p>Question {{question.number}}</p>
-                    {{question.text|safe}}
+            <div class="right-section">
+                <div class="question-wrapper">
+                    <div class="question">
+                        <p>Question {{question.number}}</p>
+                        {{question.text|safe}}
+                    </div>
+                    {% for sub in sub_questions %}
+                    {% if sub.question.id == question.id %}
+                    <div class="sub">
+                        <p>{{sub.number}}
+                            {{sub.text|safe}}
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% for sub in sub_questions %}
-                <div class="sub">
-                    <p>{{sub.number}}
-                        {{sub.text|safe}}
-                    </p>
-                </div>
-                {% endfor %}
-                {% endfor %}
             </div>
+           
         </div>
-        {% endfor %}
+         {% endfor %}
     </div>
     <div class="test-footer">
         <div class="navigation-buttons">
@@ -126,5 +119,4 @@ Test Page
     const timerInterval = setInterval(updateTimer, 1000);
     updateTimer(); // Initial display
 </script>
-{% endif %}
 {% endblock %}
