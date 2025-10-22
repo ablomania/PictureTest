@@ -566,132 +566,396 @@ textarea {
 }
 
 /* --- Test Page Styling & Animation --- */
+/* --- Global Variables and Setup (Same as before) --- */
+:root {
+    --color-primary: #5A74FF; 
+    --color-secondary: #3B4B77; 
+    --color-accent: #1DD1A1; 
+    --color-danger: #FF6B81; 
+    --color-background-light: #F7F9FC; 
+    --color-border-subtle: #EBEFF3;
+    --shadow-depth-1: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-depth-2: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--color-background-light); 
+    font-family: 'Poppins', sans-serif;
+}
+
+
+/* --- Test Page Wrapper (The Main Node) --- */
 .test-page-wrapper {
-    width: 100%;
-    max-width: 90vw;
-    margin: 32px auto 32px auto;
+    width: 100%; /* CHANGED TO FULL WIDTH */
+    max-width: 100%; /* CHANGED TO FULL WIDTH */
+    margin: 0 auto; /* Centering will still work but it's now full width */
     background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(44,62,80,0.10);
-    padding: 32px 36px 24px 36px;
-    animation: fadeInUp 1s;
-    min-height: 85vh;
+    border-radius: 0; /* Removing radius for full width */
+    box-shadow: none; /* Removing shadow for full width */
+    padding: 40px 80px 40px 80px; /* Increased side padding for content */
+    animation: fadeInUp 0.8s ease-out;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
-    @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(40px);}
-    to { opacity: 1; transform: translateY(0);}
 }
 
+/* All other styles within the wrapper remain the same for beauty (e.g., .test-head, .test_body, .test-content, etc.) */
+
+
+/* --- NEW: Image Modal Styles --- */
+
+/* Modal Backdrop (Overlay) */
+.modal-backdrop {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000; /* High z-index to cover everything */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.9); /* Dark, transparent background */
+    backdrop-filter: blur(5px); /* Optional: blur effect */
+    align-items: center;
+    justify-content: center;
+    animation: fadeInModal 0.3s forwards;
+}
+
+/* Modal Content Box */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 1200px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Modal Header/Controls */
+.modal-header {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--color-border-subtle);
+    margin-bottom: 15px;
+}
+
+.modal-control-btn, .modal-close-btn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+}
+
+.modal-control-btn:hover {
+    background-color: #4663e6;
+}
+
+.modal-close-btn {
+    background: var(--color-danger);
+}
+
+.modal-close-btn:hover {
+    background-color: #d15c71;
+}
+
+/* Modal Image Body and Styling */
+.modal-body {
+    overflow: hidden; /* Important: Prevents scrollbars on modal body */
+    text-align: center;
+    height: 70vh; /* Set a specific height for the viewing area */
+    cursor: grab; /* Indicates drag capability */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-body:active {
+    cursor: grabbing;
+}
+
+#modalImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform: scale(1) translate(0, 0); /* Initial state for transform (scale, drag) */
+    transform-origin: center center;
+    user-select: none; /* Prevents text selection on image */
+    pointer-events: none; /* Let drag events fire on the parent */
+}
+
+/* Animations */
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.9); }
+    to { transform: scale(1); }
+}
+
+/* The rest of the original styles (e.g., .test-head, .timer-card, .btn, etc.) should be included here,
+   following the full-width wrapper style, to maintain the desired aesthetic. */
+
+/* Example: Restoring a key element's style */
 .test-head {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 18px;
-    border-bottom: 1.5px solid #e0e7ef;
-    margin-bottom: 24px;
-    animation: slideDown 1s;
+    padding-bottom: 25px;
+    border-bottom: 2px solid var(--color-border-subtle);
+    margin-bottom: 35px;
+}
+
+.course-context {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #9AA5B8;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
 }
 
 .test-head h3 {
     margin: 0;
-    color: #2d3e50;
-    font-size: 1.3rem;
-    letter-spacing: 1px;
+    color: var(--color-secondary);
+    font-size: 2rem; /* Prominent page number */
+    font-weight: 800;
+}
+
+.page-number-display {
+    color: var(--color-primary); /* Highlight the number */
+}
+
+/* Timer Card (The "ttw" div) */
+.timer-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--color-background-light);
+    border-radius: 12px;
+    padding: 8px 18px;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05); /* Soft inner glow */
 }
 
 #timer strong {
-    font-size: 1.1rem;
-    color: #007bff;
-    background: #eaf1fb;
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--color-primary);
+    font-weight: 700;
     letter-spacing: 1px;
     animation: timerPulse 1.5s infinite alternate;
 }
 
 @keyframes timerPulse {
-    from { background: #eaf1fb; color: #007bff;}
-    to { background: #cfe2ff; color: #2d3e50;}
+    from { color: var(--color-primary); transform: scale(1);}
+    to { color: var(--color-secondary); transform: scale(1.02);}
 }
 
+
+/* --- Test Body and Question Layout --- */
 .test_body {
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    gap: 10px;
-    margin-bottom: 24px;
-    animation: fadeIn 1.2s;
+    gap: 40px; /* Space between questions */
+    margin-bottom: 40px;
 }
+
 .test-content {
     display: flex;
     flex-direction: row;
-    justify-content: center;
-    padding: 5px;
+    padding: 20px;
+    border-radius: 15px;
+    background-color: #fff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     
+    &:hover {
+        box-shadow: var(--shadow-depth-1); /* Subtle lift on hover */
+    }
+    
+    .left-section{
+        width: 40%; /* Image section */
+        padding-right: 30px;
+    }
+
+    .right-section{
+        width: 60%; /* Text section */
+        padding-left: 20px;
+        border-left: 1px solid var(--color-border-subtle); /* Visual text/image divider */
+    }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0;}
-    to { opacity: 1;}
+/* Image Styling */
+.image-wrapper{
+    border-radius: 12px;
+    overflow: hidden;
+    line-height: 0;
+    box-shadow: var(--shadow-depth-1);
 }
 
+.question-image {
+    width: 100%;
+    height: 100%;
+    max-height: 400px;
+    object-fit: cover; /* Fill the space, crop if necessary */
+    display: block;
+    animation: imgPop 1s ease-out;
+}
 
 @keyframes imgPop {
-    0% { transform: scale(0.85) rotate(-2deg); opacity: 0;}
-    60% { transform: scale(1.05) rotate(2deg); opacity: 1;}
-    100% { transform: scale(1) rotate(0);}
+    0% { opacity: 0; transform: scale(0.95);}
+    100% { opacity: 1; transform: scale(1);}
 }
 
 
-@keyframes fadeInRight {
-    from { opacity: 0; transform: translateX(40px);}
-    to { opacity: 1; transform: translateX(0);}
+/* Question Text and Options */
+.question-header {
+    margin-bottom: 15px;
+}
+
+.question-tag {
+    display: inline-block;
+    padding: 5px 12px;
+    background-color: var(--color-primary);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.question-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: var(--color-secondary);
+    margin-bottom: 25px;
+    font-weight: 500;
+}
+
+.sub-questions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sub-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    
+    &:hover {
+        background-color: var(--color-background-light);
+        border-color: var(--color-primary);
+    }
+}
+
+.sub-bullet {
+    font-weight: 700;
+    color: var(--color-primary);
+    min-width: 20px;
+    line-height: 1.5;
+}
+
+.sub-text {
+    font-size: 1.05rem;
+    color: var(--color-secondary);
+    line-height: 1.5;
 }
 
 
+/* --- Footer and Navigation Buttons --- */
 .test-footer {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 18px;
-    animation: fadeInUp 1.2s;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid var(--color-border-subtle);
 }
 
 .navigation-buttons {
     display: flex;
-    gap: 24px;
+    gap: 20px;
 }
 
-.btn-prev, .btn-next {
-    background: linear-gradient(90deg, #2d3e50 60%, #4f6d7a 100%);
-    color: #fff;
+.btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     border: none;
-    border-radius: 7px;
-    padding: 12px 36px;
-    font-size: 1.1rem;
+    border-radius: 12px;
+    padding: 14px 30px;
+    font-size: 1.05rem;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    box-shadow: 0 2px 8px rgba(44,62,80,0.08);
-    transition: background 0.3s, transform 0.2s;
-    animation: btnPop 1.2s;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-depth-1);
+    
+    i {
+        font-size: 1em;
+    }
 }
 
-@keyframes btnPop {
-    0% { transform: scale(0.8); opacity: 0; }
-    60% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(1); }
+/* Previous Button (Secondary Style) */
+.btn-prev {
+    background: #EBEFF3;
+    color: var(--color-secondary);
+    
+    &:hover {
+        background: #DCE3EA;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
 }
 
-.btn-prev:hover, .btn-next:hover {
-    background: linear-gradient(90deg, #4f6d7a 60%, #2d3e50 100%);
-    transform: translateY(-2px) scale(1.04);
+/* Next Button (Primary Action) */
+.btn-next {
+    background: var(--color-primary);
+    color: #fff;
+    background-image: linear-gradient(135deg, var(--color-primary) 0%, #4663e6 100%);
+    
+    &:hover {
+        background-image: linear-gradient(135deg, #4663e6 0%, var(--color-primary) 100%);
+        box-shadow: 0 8px 20px rgba(90, 116, 255, 0.4);
+        transform: translateY(-2px);
+    }
 }
+
+/* Done Button (Accent Color) */
+.btn-done {
+    background: var(--color-accent);
+    color: #fff;
+    background-image: linear-gradient(135deg, var(--color-accent) 0%, #17A987 100%);
+    
+    &:hover {
+        background-image: linear-gradient(135deg, #17A987 0%, var(--color-accent) 100%);
+        box-shadow: 0 8px 20px rgba(29, 209, 161, 0.4);
+        transform: translateY(-2px);
+    }
 }
 
 
@@ -911,4 +1175,244 @@ textarea {
 @media (max-width: 480px) {
     .sub-questions .field-wrapper { flex-direction: column; align-items: stretch; }
     .sub-questions .field-wrapper label { min-width: auto; }
+}
+
+/* --- Scientific Calculator Modal Styling --- */
+.calculator-modal {
+    position: fixed;
+    top: 100px;
+    right: 40px;
+    z-index: 1200;
+    background: #f8fbff;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(44,62,80,0.18);
+    width: 340px;
+    min-width: 280px;
+    max-width: 95vw;
+    padding: 0;
+    display: none;
+    flex-direction: column;
+    animation: fadeInUp 0.5s;
+    user-select: none;
+}
+
+.calculator-header {
+    background: linear-gradient(90deg, #5A74FF 60%, #3B4B77 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 14px 18px;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+}
+
+.calculator-close-btn {
+    background: #FF6B81;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.calculator-close-btn:hover {
+    background: #d15c71;
+}
+
+.calculator-body {
+    padding: 18px 18px 16px 18px;
+    background: #fff;
+    border-radius: 0 0 18px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#calculator-display {
+    width: 100%;
+    font-size: 1.5rem;
+    padding: 12px 10px;
+    margin-bottom: 18px;
+    border: 1.5px solid #e0e7ef;
+    border-radius: 10px;
+    background: #f8fbff;
+    color: #2d3e50;
+    text-align: right;
+    font-family: 'Consolas', 'Menlo', monospace;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.04);
+    outline: none;
+}
+
+.calculator-keys {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+.calculator-keys button {
+    padding: 12px 0;
+    font-size: 1.08rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: #eaf6ff;
+    color: #2d3e50;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.04);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    outline: none;
+}
+
+.calculator-keys button:active {
+    background: #d7ecff;
+    transform: scale(0.97);
+}
+
+.key-operator {
+    background: linear-gradient(90deg, #5A74FF 60%, #3B4B77 100%);
+    color: #fff;
+}
+.key-operator:active, .key-operator:hover {
+    background: linear-gradient(90deg, #4663e6 60%, #5A74FF 100%);
+    color: #fff;
+}
+
+.key-function {
+    background: #f7fbff;
+    color: #007bff;
+}
+.key-function:active, .key-function:hover {
+    background: #eaf6ff;
+    color: #0056b3;
+}
+
+.key-control {
+    background: #FF6B81;
+    color: #fff;
+}
+.key-control:active, .key-control:hover {
+    background: #d15c71;
+    color: #fff;
+}
+
+.key-zero {
+    grid-column: span 2;
+}
+
+.equals {
+    background: linear-gradient(90deg, #1DD1A1 60%, #17A987 100%);
+    color: #fff;
+    font-weight: 700;
+}
+.equals:active, .equals:hover {
+    background: linear-gradient(90deg, #17A987 60%, #1DD1A1 100%);
+    color: #fff;
+}
+
+@media (max-width: 600px) {
+    .calculator-modal {
+        width: 98vw;
+        right: 1vw;
+        left: 1vw;
+        min-width: unset;
+        padding: 0;
+    }
+    .calculator-header {
+        font-size: 1rem;
+        padding: 10px 10px;
+    }
+    .calculator-body {
+        padding: 10px 8px 10px 8px;
+    }
+    #calculator-display {
+        font-size: 1.1rem;
+        padding: 8px 6px;
+    }
+    .calculator-keys {
+        gap: 6px;
+    }
+    .calculator-keys button {
+        padding: 10px 0;
+        font-size: 0.98rem;
+    }
+}
+
+/* --- Academic Style for Test Done Wrapper --- */
+.test-done-wrapper {
+    max-width: 540px;
+    margin: 4rem auto;
+    padding: 2.5rem 2rem 2rem 2rem;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(44,62,80,0.10);
+    text-align: center;
+    border: 1.5px solid #e0e7ef;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    position: relative;
+    animation: fadeSlideIn 0.7s ease-out;
+}
+
+.test-done-wrapper::before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 32px;
+    top: 32px;
+    width: 60px;
+    height: 60px;
+    background: url('https://cdn-icons-png.flaticon.com/512/3135/3135715.png') no-repeat center center;
+    background-size: 48px 48px;
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+.test-done-wrapper h2 {
+    font-size: 2.1rem;
+    color: #2d3e50;
+    margin-bottom: 1.2rem;
+    letter-spacing: 1px;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+    border-bottom: 2px solid #e0e7ef;
+    padding-bottom: 0.7rem;
+}
+
+.test-done-wrapper a {
+    display: inline-block;
+    padding: 0.7rem 1.6rem;
+    background-color: #f7fbff;
+    color: #2d3e50;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 7px;
+    border: 1px solid #e0e7ef;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.08rem;
+    margin-top: 1.2rem;
+    transition: background 0.3s, color 0.3s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.04);
+}
+
+.test-done-wrapper a:hover {
+    background-color: #eaf6ff;
+    color: #007bff;
+    box-shadow: 0 4px 16px rgba(44,62,80,0.10);
+    transform: scale(1.04);
+}
+
+@keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
 }

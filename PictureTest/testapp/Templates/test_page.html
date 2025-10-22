@@ -6,14 +6,19 @@ Test Page
 {% endblock %}
 
 {% block content %}
-<div class="test-page-wrapper">
+<div class="test-page-wrapper full-width">
     <div class="test-head">
-        <h3>Page : {{page.page_number}}</h3>
-        <div class="ttw" style="display: flex; flex-direction: row; gap: 5px; justify-content: center;">
-            <img src="{% static 'images/running.gif' %}" width="40px" height="40px" alt="">
-            <p id="timer"><strong></strong></p>
+        <p class="course-context">Current Test Page</p> 
+        <h3>Page : <span class="page-number-display">{{page.page_number}}</span></h3>
+        <div class="header-right-controls">
+            <button class="calculator-btn btn" onclick="toggleCalculator()"><i class="fas fa-calculator"></i> Calculator</button>
+            <div class="timer-card">
+                <img src="{% static 'images/running.gif' %}" width="30px" height="30px" alt="Timer Icon">
+                <p id="timer"><strong></strong></p>
+            </div>
         </div>
     </div>
+    
     <div class="test_body">
         {% for question in questions %}
         <div class="test-content">
@@ -23,52 +28,448 @@ Test Page
                 {% for image in images %}
                 {% if image.question.id == question.id %}
                 <div class="image-wrapper">
-                    <img src="{{ image.image.url }}" alt="Test Image" width="300px" height="300px">
+                    <img class="question-image" src="{{ image.image.url }}" alt="Question Image" title="Click to zoom"
+                         onclick="openImageModal('{{ image.image.url }}')">
                 </div>
                 {% endif %}
                 {% endfor %}
             </div>
             {% endif %}
+            
             <div class="right-section">
                 <div class="question-wrapper">
-                    <div class="question">
-                        <p>Question {{question.number}}</p>
+                    <div class="question-header">
+                        <span class="question-tag">Question {{question.number}}</span>
+                    </div>
+                    <div class="question-text">
                         {{question.text|safe}}
                     </div>
+                    
+                    <ul class="sub-questions-list">
                     {% for sub in sub_questions %}
                     {% if sub.question.id == question.id %}
-                    <div class="sub">
-                        <p>{{sub.number}}
-                            {{sub.text|safe}}
-                        </p>
-                    </div>
+                        <li class="sub-option">
+                            <span class="sub-bullet">
+                                {% if sub.number == 1 %} A 
+                                {% elif sub.number == 2 %} B 
+                                {% elif sub.number == 3 %} C 
+                                {% elif sub.number == 4 %} D 
+                                {% elif sub.number == 5 %} E 
+                                {% elif sub.number == 6 %} F 
+                                {% elif sub.number == 7 %} G 
+                                {% elif sub.number == 8 %} H 
+                                {% elif sub.number == 9 %} I 
+                                {% elif sub.number == 10 %} J 
+                                {% endif %}.
+                            </span>
+                            <div class="sub-text">
+                                {{sub.text|safe}}
+                            </div>
+                        </li>
                     {% endif %}
                     {% endfor %}
+                    </ul>
                 </div>
             </div>
-           
+            
         </div>
-         {% endfor %}
+        {% endfor %}
     </div>
+    
     <div class="test-footer">
         <div class="navigation-buttons">
             <form action="" style="display: none;" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="page_number" value="{{page.page_number}}">
             </form>
+            
             {% if show_previous_button %}
-            <a onclick="saveTime()" href="{% url 'view_test_page' test.id previous_page_number %}" class="btn-prev smbtn">Previous</a>
+            <a onclick="saveTime()" href="{% url 'view_test_page' test.id previous_page_number %}" class="btn action-btn btn-prev">
+                <i class="fas fa-arrow-left"></i> Previous
+            </a>
             {% endif %}
+            
             {% if show_next_button %}
-            <a onclick="saveTime()" href="{% url 'view_test_page' test.id next_page_number %}" class="btn-next smbtn">Next</a>
+            <a onclick="saveTime()" href="{% url 'view_test_page' test.id next_page_number %}" class="btn action-btn btn-next">
+                Next <i class="fas fa-arrow-right"></i>
+            </a>
             {% endif %}
+            
             {% if show_done_button %}
-            <a href="{% url 'test_done_page' test.id %}" class="btn-next">Done</a>
+            <a href="{% url 'test_done_page' test.id %}" class="btn action-btn btn-done">
+                Finish Test
+            </a>
             {% endif %}
         </div>
     </div>
 </div>
+
+<div id="imageModal" class="modal-backdrop">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button class="modal-control-btn" onclick="zoomImage(0.1)"><i class="fas fa-search-plus"></i> Zoom In</button>
+            <button class="modal-control-btn" onclick="zoomImage(-0.1)"><i class="fas fa-search-minus"></i> Zoom Out</button>
+            <button class="modal-control-btn" onclick="resetImage()"><i class="fas fa-sync-alt"></i> Reset</button>
+            <button class="modal-close-btn" onclick="closeImageModal()"><i class="fas fa-times"></i> Close</button>
+        </div>
+        
+        <div class="modal-body" id="modalBody">
+            <img id="modalImage" src="" alt="Zoomable Image">
+        </div>
+    </div>
+</div>
+
+<div id="calculator" class="calculator-modal scientific" style="display: none;">
+    <div class="calculator-header" id="calculatorHeader">
+        Scientific Calculator
+        <button class="calculator-close-btn" onclick="toggleCalculator()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="calculator-body">
+        <input type="text" id="calculator-display" value="0" disabled>
+        <div class="calculator-keys">
+            <button class="key-function" onclick="applyConstant('pi')">π</button>
+            <button class="key-function" onclick="applyConstant('e')">e</button>
+            <button class="key-operator" onclick="inputOperation('pow')">xʸ</button>
+            <button class="key-operator" onclick="applyFunction('sqrt')">√</button>
+            <button class="key-control" onclick="clearDisplay()">AC</button>
+            
+            <button class="key-function" onclick="applyFunction('sin')">sin</button>
+            <button class="key-function" onclick="applyFunction('cos')">cos</button>
+            <button class="key-function" onclick="applyFunction('tan')">tan</button>
+            <button class="key-operator" onclick="applyFunction('log')">log</button>
+            <button class="key-operator" onclick="inputOperation('/')">÷</button>
+
+            <button onclick="inputDigit('7')">7</button>
+            <button onclick="inputDigit('8')">8</button>
+            <button onclick="inputDigit('9')">9</button>
+            <button class="key-operator" onclick="inputOperation('*')">×</button>
+            <button class="key-control" onclick="toggleSign()">+/-</button>
+
+            <button onclick="inputDigit('4')">4</button>
+            <button onclick="inputDigit('5')">5</button>
+            <button onclick="inputDigit('6')">6</button>
+            <button class="key-operator" onclick="inputOperation('-')">−</button>
+            <button class="key-function" onclick="applyFunction('fact')">n!</button>
+
+            <button onclick="inputDigit('1')">1</button>
+            <button onclick="inputDigit('2')">2</button>
+            <button onclick="inputDigit('3')">3</button>
+            <button class="key-operator" onclick="inputOperation('+')">+</button>
+            <button class="key-function" onclick="applyFunction('pow2')">x²</button>
+
+            <button class="key-zero" onclick="inputDigit('0')">0</button>
+            <button onclick="inputDecimal('.')">.</button>
+            <button class="key-operator equals" onclick="calculateResult()">=</button>
+        </div>
+    </div>
+</div>
+
+
 <script>
+    
+    
+
+    // --- 1. IMAGE MODAL LOGIC (Zoom & Drag) ---
+    
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalBody = document.getElementById('modalBody');
+    
+    let currentScale = 1.0;
+    let isDragging = false;
+    let startX, startY, initialX = 0, initialY = 0; // Initialize image transform positions
+
+    function openImageModal(imageUrl) {
+        modalImage.src = imageUrl;
+        modal.style.display = 'flex';
+        resetImage(); // Always reset state on open
+    }
+
+    function closeImageModal() {
+        modal.style.display = 'none';
+    }
+
+    function zoomImage(delta) {
+        currentScale = Math.max(0.5, Math.min(3.0, currentScale + delta)); // Min 50%, Max 300%
+        modalImage.style.transform = `translate(${initialX}px, ${initialY}px) scale(${currentScale})`;
+    }
+
+    function resetImage() {
+        currentScale = 1.0;
+        initialX = 0;
+        initialY = 0;
+        modalImage.style.transition = 'transform 0.3s ease';
+        modalImage.style.transform = `translate(0px, 0px) scale(1)`;
+        // Remove transition after reset to allow smooth dragging without latency
+        setTimeout(() => { modalImage.style.transition = 'none'; }, 300);
+    }
+
+    // Drag Start
+    modalBody.addEventListener('mousedown', (e) => {
+        if (modal.style.display !== 'flex') return;
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        // Extract current transform values (needed for smooth start after zoom/reset)
+        const style = window.getComputedStyle(modalImage);
+        const matrix = new WebKitCSSMatrix(style.transform);
+        initialX = matrix.e;
+        initialY = matrix.f;
+        
+        modalImage.style.cursor = 'grabbing';
+    });
+
+    // Drag Move
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging || modal.style.display !== 'flex') return;
+        
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        const newX = initialX + deltaX;
+        const newY = initialY + deltaY;
+        
+        modalImage.style.transform = `translate(${newX}px, ${newY}px) scale(${currentScale})`;
+    });
+
+    // Drag End
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            // Persist the final drag position for the next movement/zoom calculation
+            const style = window.getComputedStyle(modalImage);
+            const matrix = new WebKitCSSMatrix(style.transform);
+            initialX = matrix.e;
+            initialY = matrix.f;
+            
+            modalImage.style.cursor = 'grab';
+        }
+    });
+
+    // Close modal on escape key or outside click
+    document.addEventListener('keydown', (e) => {
+        if (e.key === "Escape" && modal.style.display === 'flex') {
+            closeImageModal();
+        }
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeImageModal();
+        }
+    });
+
+
+    // --- 2. SCIENTIFIC CALCULATOR LOGIC (Drag & Functions) ---
+
+    // Calculator DOM Elements
+    const calculator = document.getElementById('calculator');
+    const display = document.getElementById('calculator-display');
+    const header = document.getElementById('calculatorHeader');
+
+    // Calculator State
+    let currentInput = '0';
+    let firstOperand = null;
+    let operator = null;
+    let waitingForSecondOperand = false;
+
+    // --- Core Calculator Logic ---
+    function updateDisplay() {
+        // Limit display to prevent overflow using toPrecision for large numbers
+        let displayValue = currentInput.length > 15 && !isNaN(parseFloat(currentInput)) ? parseFloat(currentInput).toPrecision(10) : currentInput;
+        display.value = displayValue;
+    }
+
+    function clearDisplay() {
+        currentInput = '0';
+        firstOperand = null;
+        operator = null;
+        waitingForSecondOperand = false;
+        updateDisplay();
+    }
+
+    function inputDigit(digit) {
+        if (waitingForSecondOperand) {
+            currentInput = digit;
+            waitingForSecondOperand = false;
+        } else {
+            currentInput = currentInput === '0' ? digit : currentInput + digit;
+        }
+        updateDisplay();
+    }
+
+    function inputDecimal(dot) {
+        if (waitingForSecondOperand) {
+            currentInput = '0.';
+            waitingForSecondOperand = false;
+        }
+        if (!currentInput.includes(dot)) {
+            currentInput += dot;
+        }
+        updateDisplay();
+    }
+
+    function toggleSign() {
+        if (currentInput !== '0') {
+            currentInput = (parseFloat(currentInput) * -1).toString();
+            updateDisplay();
+        }
+    }
+
+    function calculate(first, second, op) {
+        first = parseFloat(first);
+        second = parseFloat(second);
+
+        if (op === 'pow') return Math.pow(first, second);
+        if (op === '+') return first + second;
+        if (op === '-') return first - second;
+        if (op === '*') return first * second;
+        if (op === '/') return second === 0 ? 'Err' : first / second;
+
+        return second;
+    }
+
+    function inputOperation(nextOperator) {
+        const inputValue = parseFloat(currentInput);
+
+        if (operator && waitingForSecondOperand) {
+            operator = nextOperator;
+            return;
+        }
+
+        if (firstOperand === null) {
+            firstOperand = inputValue;
+        } else if (operator) {
+            const result = calculate(firstOperand, inputValue, operator);
+            currentInput = String(result);
+            firstOperand = result;
+        }
+
+        waitingForSecondOperand = true;
+        operator = nextOperator;
+        updateDisplay();
+    }
+
+    function calculateResult() {
+        if (operator && firstOperand !== null && !waitingForSecondOperand) {
+            const result = calculate(firstOperand, parseFloat(currentInput), operator);
+            currentInput = String(result);
+            firstOperand = null;
+            operator = null;
+            waitingForSecondOperand = false;
+            updateDisplay();
+        }
+    }
+
+    // --- Scientific Functions ---
+    function applyFunction(func) {
+        const value = parseFloat(currentInput);
+        let result;
+
+        switch (func) {
+            case 'sin':
+                result = Math.sin(value * Math.PI / 180); // Degrees to radians
+                break;
+            case 'cos':
+                result = Math.cos(value * Math.PI / 180);
+                break;
+            case 'tan':
+                result = Math.tan(value * Math.PI / 180);
+                break;
+            case 'log':
+                result = value > 0 ? Math.log10(value) : 'Err';
+                break;
+            case 'sqrt':
+                result = value >= 0 ? Math.sqrt(value) : 'Err';
+                break;
+            case 'pow2':
+                result = Math.pow(value, 2);
+                break;
+            case 'fact':
+                result = factorial(value);
+                break;
+            default:
+                return;
+        }
+
+        currentInput = String(result);
+        waitingForSecondOperand = true;
+        updateDisplay();
+    }
+
+    function applyConstant(constant) {
+        if (constant === 'pi') {
+            currentInput = String(Math.PI);
+        } else if (constant === 'e') {
+            currentInput = String(Math.E);
+        }
+        waitingForSecondOperand = true;
+        updateDisplay();
+    }
+
+    function factorial(n) {
+        if (n < 0 || !Number.isInteger(n)) return 'Err';
+        if (n === 0) return 1;
+        let result = 1;
+        for (let i = 2; i <= n; i++) {
+            result *= i;
+        }
+        return result;
+    }
+
+    // --- Calculator UI/Drag Logic ---
+    function toggleCalculator() {
+        calculator.style.display = calculator.style.display === 'none' ? 'block' : 'none';
+        if (calculator.style.display === 'block') {
+            clearDisplay();
+        }
+    }
+
+    // Draggable Logic
+    let isCalcDragging = false;
+    let currentX, currentY, initialMouseX, initialMouseY;
+
+    header.addEventListener('mousedown', (e) => {
+        isCalcDragging = true;
+        initialMouseX = e.clientX;
+        initialMouseY = e.clientY;
+
+        const rect = calculator.getBoundingClientRect();
+        currentX = rect.left;
+        currentY = rect.top;
+
+        header.style.cursor = 'grabbing';
+        calculator.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isCalcDragging) return;
+
+        const deltaX = e.clientX - initialMouseX;
+        const deltaY = e.clientY - initialMouseY;
+
+        const newLeft = currentX + deltaX;
+        const newTop = currentY + deltaY;
+
+        calculator.style.left = `${newLeft}px`;
+        calculator.style.top = `${newTop}px`;
+        calculator.style.right = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isCalcDragging) {
+            isCalcDragging = false;
+            header.style.cursor = 'grab';
+            calculator.style.transition = 'top 0.3s, left 0.3s';
+        }
+    });
+
+    // Initialize calculator display
+    updateDisplay();
+
+    // --- Timer Functionality ---
     const current_test_id = String({{ test.id }}); // Ensure string for comparison
     const pageNumber_Server = String({{ page.page_number }});
     const timePerPageFlag = "{{ time_per_page }}" === 'True' ? true: false; // Django boolean to JS
