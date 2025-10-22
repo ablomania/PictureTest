@@ -59,12 +59,7 @@ Edit Page
                                 {% endfor %}
                             </div>
                             <div class="image-input-wrapper">
-                                
-                                {% for image in images %}
-                                {% if image.question.id == question.id %}
                                 <input type="file" class="page-image page-image-hidden page-image-static" name="page_image_1" onchange="previewImage(event)" placeholder="New Image" id="{{image.image.url}}" accept="image/*" style="display: none;" disabled>
-                                {% endif %}
-                                {% endfor %}
                             </div>
                         </div>
                         
@@ -99,13 +94,24 @@ Edit Page
                                 </span></label>
                                 <!-- Sub Question -->
                                     <div class="quill-wrapper">
-                                        <div id="editor-sub-{{question.number}}-{{sub_question.number}}" class="static-quill-editor quill-editor"></div>
-                                        <textarea name="sub_{{question.number}}"  class="sub-input" id="sub-{{question.number}}-{{sub_question.number}}" style="display: none;">{{ sub_question.text|safe }}</textarea>
-                                    </div>
+                                            <div id="editor-sub-{{question.number}}-{{sub_question.number}}" class="static-quill-editor quill-editor"></div>
+                                            <textarea name="sub_{{question.number}}"  class="sub-input" id="sub-{{question.number}}-{{sub_question.number}}" style="display: none;">{{ sub_question.text|safe }}</textarea>
+                                        </div>
+                                    <!-- static delete button for server-rendered subs -->
+                                    <button type="button" class="delete-sub-btn static-delete-sub-btn" title="Delete sub-question">🗑</button>
                                 <!-- <input type="text" class="sub-input" name="sub_1" id="sub" disabled> -->
                             </div>
                             {% endif %}
                             {% endfor %}
+                            <div class="field-wrapper sub-hidden" style="display: none;">
+                                <label for="sub"><span class="sub_label">sub</span></label>
+                                <!-- Sub Question -->
+                                    <div class="quill-wrapper sub-hidden" style="display: none;">
+                                        <div id="editor-sub-1" class="quill-editor"></div>
+                                        <textarea name="sub_"  class="sub-input" id="sub-1" disabled  style="display: none;"></textarea>
+                                    </div>
+                                <!-- <input type="text" class="sub-input" name="sub_1" id="sub" disabled> -->
+                            </div>
                             <div class="buttons">
                                 <button type="button" onclick="createSub(event)">+ sub</button>
                             </div>
@@ -164,12 +170,28 @@ Edit Page
             </div>
         </form>
 </div>
+
+<div class="question-modal">
+    <div>
+        <input type="hidden" name="qnm2">
+        <h2>Are You Sure?</h2>
+        <p><strong>Task: </strong> Delete Question <span class="qnm"></span></p>
+        <div class="buttons">
+            <button type="button" onclick="deleteQuestion()">Yes</button>
+            <button type="button" onclick="closeIt('question-modal')">No</button>
+        </div>
+    </div>
+</div>
+
+<div class="sub-modal">
+
+</div>
         
 
 
 <script>
-
     let questions_count = {{question_summary|safe}}
+    console.log("qc", questions_count)
     questions_count.forEach(Element => {
         if(Element.active == "true") {
             Element.active = true;
@@ -224,6 +246,36 @@ window.addEventListener('DOMContentLoaded', () => {
     quillInstances[editorId] = quill;
   });
   console.log("ins", quillInstances)
+    // After quill editors are ready, attach delete handlers to any static sub delete buttons
+    const staticDeleteBtns = document.querySelectorAll('.static-delete-sub-btn');
+    staticDeleteBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const field = btn.closest('.field-wrapper');
+            if (!field) return;
+            const subQuestions = field.closest('.sub-questions');
+            const wrapper = field.closest('.question-wrapper');
+            const qNum = Number(wrapper.querySelector('.question-number').value);
+            const questionObj = questions_count.find(q => q.number === qNum);
+            // remove the field
+            field.remove();
+            // update model
+            if (questionObj) {
+                questionObj.sub_level = Math.max(0, (questionObj.sub_level || 1) - 1);
+            }
+            // show +sub button if under limit
+            const buttons = subQuestions.querySelector('.buttons');
+            if (buttons && questionObj && questionObj.sub_level < 6) buttons.style.display = 'block';
+            // renumber remaining subs
+            const alpha = {1: 'a',2:'b',3:'c',4:'d',5:'e',6:'f'};
+            const wrappers = Array.from(subQuestions.querySelectorAll('.field-wrapper')).filter(w => w.style.display !== 'none');
+            wrappers.forEach((w, idx) => {
+                const label = w.querySelector('.sub_label');
+                if (label) label.textContent = alpha[idx+1];
+                const ta = w.querySelector('textarea.sub-input');
+                if (ta) ta.name = 'sub_' + qNum;
+            });
+        });
+    });
 });
 
 
@@ -483,6 +535,32 @@ window.onload = function() {
     display: flex;
     flex-direction: column;
 }
+.question-wrapper {
+    position: relative;
+}
+
+.delete-question-btn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+
+/* delete sub button */
+.delete-sub-btn {
+    margin-left: 8px;
+    background: #e57373;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(229,115,115,0.15);
+}
+.delete-sub-btn:hover { background: #c62828; transform: scale(1.06); }
 
 /* Add to your styles.css */
 </style>

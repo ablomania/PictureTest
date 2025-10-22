@@ -15,13 +15,11 @@ class Question(models.Model):
     text = models.TextField(null=True)
     number = models.IntegerField(null=True)
     page = models.ForeignKey('Page', on_delete=models.CASCADE, null=True)
-    is_active = models.BooleanField(default=True)
 
 class SubQuestion(models.Model):
     text = models.TextField(null=True)
     number = models.IntegerField(null=True)
     question = models.ForeignKey('Question', on_delete=models.CASCADE, null=True)
-    is_active = models.BooleanField(default=True)
 
 
 class Instruction(models.Model):

@@ -1,3 +1,22 @@
+
+
+const closeIt = (objId) => {
+    const obj = document.querySelector(`.${objId}`) || document.getElementById(objId);
+    obj.style.display = "none";
+
+    const form = obj.querySelector("form")
+    form?.reset()
+}
+
+const openIt = (objId) => {
+    (document.getElementById(objId) || document.querySelector(`.${objId}`)).style.display = "flex";
+}
+
+const gotoPage = (url) => {
+    window.location.href = url;
+}
+
+
 function deleteQuestion(event) {
     const btn = event.target.closest('.delete-question-btn');
     const questionWrapper = btn.closest('.question-wrapper');
@@ -82,6 +101,7 @@ const addImage = ({target}) => {
     let parent = target.closest(".image-wrapper");
     let wrapper = target.closest(".question-wrapper");
     let inputWrapper = parent.querySelector(".image-input-wrapper");
+    let question_number = wrapper.querySelector(".question-number").value
 
     // Find a template input (prefer hidden template, fallback to any .page-image)
     let template = parent.querySelector(".page-image-hidden") || parent.querySelector(".page-image");
@@ -91,6 +111,7 @@ const addImage = ({target}) => {
     let clone = template.cloneNode(true);
     clone.disabled = false;
     clone.style.display = "";
+    clone.name = "page_image_" + question_number
     // Remove duplicate id to avoid collisions and assign a unique id
     if (clone.id) {
         clone.removeAttribute('id');
@@ -248,7 +269,7 @@ const createSub = ({ target }) => {
   if (!question || question.sub_level >= 6) return;
 
   const subQuestions = wrapper.querySelector('.sub-questions');
-  const template = subQuestions.querySelector('.field-wrapper');
+  const template = subQuestions.querySelector('.sub-hidden');
   const buttons = subQuestions.querySelector('.buttons');
   const clone = template.cloneNode(true);
   const subEditorDiv = clone.querySelector('.quill-editor');
@@ -267,7 +288,7 @@ const createSub = ({ target }) => {
   if (label) label.textContent = alpha[subLevel];
 
   // Update input
-  const subInput = clone.querySelector('textarea[name="sub_"]');
+  const subInput = clone.querySelector('textarea');
   subInput.disabled = false;
   subInput.name = 'sub_' + qNum;
   subInput.id = 'sub-' + qNum + '-' + subLevel;
@@ -284,11 +305,11 @@ const createSub = ({ target }) => {
 
   // Insert into DOM before initializing Quill
   subQuestions.insertBefore(clone, buttons);
-const subQuill = new Quill('#editor-sub-' + qNum + '-' + subLevel, quillConfigs);
-subQuill.on('text-change', () => {
+  const subQuill = new Quill('#editor-sub-' + qNum + '-' + subLevel, quillConfigs);
+  subQuill.on('text-change', () => {
     subInput.value = subQuill.root.innerHTML;
-});
-quillInstances['sub_' + qNum + '_' + subLevel] = subQuill;
+  });
+  quillInstances['sub_' + qNum + '_' + subLevel] = subQuill;
     
 
   // Add delete button
@@ -318,6 +339,7 @@ quillInstances['sub_' + qNum + '_' + subLevel] = subQuill;
   delBtn.addEventListener('click', () => {
     clone.remove();
     question.sub_level = Math.max(0, question.sub_level - 1);
+    questions_count[question.index].sub_level -= 1;
     if (question.sub_level < 6) buttons.style.display = 'block';
 
     const wrappers = Array.from(subQuestions.querySelectorAll('.field-wrapper')).filter(w => w.style.display !== 'none');
@@ -325,12 +347,14 @@ quillInstances['sub_' + qNum + '_' + subLevel] = subQuill;
       const label = w.querySelector('.sub_label');
       if (label) label.textContent = alpha[idx + 1];
     });
+    console.log("sub-level after deletion:", questions_count[question.index].sub_level);
   });
 
   clone.appendChild(delBtn);
 
-  if (subLevel >= 6) buttons.style.display = 'none';
+  if (question.subLevel >= 6) buttons.style.display = 'none';
   questions_count[question.index].sub_level += 1;
+  console.log("sub-level after addition:", questions_count[question.index].sub_level);
 };
 
 

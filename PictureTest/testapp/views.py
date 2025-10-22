@@ -30,11 +30,11 @@ def get_page_question_summary(page_id):
     if not page:
         return None
 
-    questions = Question.objects.filter(page=page, is_active=True).order_by("number")
+    questions = Question.objects.filter(page=page).order_by("number")
     question_ids = questions.values_list("id", flat=True)
 
     # Preload related sub-questions and images
-    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids, is_active=True)
+    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids)
     images = Images.objects.filter(question_id__in=question_ids)
 
     # Build summary
@@ -96,8 +96,22 @@ def dashboard(request):
     template = loader.get_template("dashboard.html")
     active_tests = Test.objects.filter(is_active=True)
 
+    error_message = ""
+
+
+    if request.method == "POST":
+        form_data = request.POST
+        test_id = form_data.get("test_id", None)
+        password = form_data.get("password", None)
+        if test_id and password:
+            test = Test.objects.filter(id=int(test_id)).first()
+            if test and hash_string(password, 'md5') == test.password:
+                return HttpResponseRedirect(reverse("start_test_page", args=[test.id]))
+            else: error_message = "Incorrect Password. Please Try Again."
+
     context = {
         "active_tests": active_tests,
+        "error_message": error_message
     }
     response = HttpResponse(template.render(context, request))
     return response
@@ -111,6 +125,11 @@ def test_page(request, test_id, page_number):
         return HttpResponse("Test not found")
     
     current_page = Page.objects.filter(test=test, page_number=page_number, is_active=True).first()
+    questions = Question.objects.filter(page_id=current_page.id).order_by("number")
+    question_ids = questions.values_list("id", flat=True)
+    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids).order_by("number")
+    images = Images.objects.filter(question_id__in=question_ids)
+    
     if not current_page:
         return HttpResponse("Page not found")
     total_pages = Page.objects.filter(test=test, is_active=True).count()
@@ -129,6 +148,9 @@ def test_page(request, test_id, page_number):
     print("per page: ", test.time_per_page)
     template = loader.get_template("test_page.html")
     context = {
+        "questions": questions,
+        "sub_questions": sub_questions,
+        "images": images,
         "test": current_page.test,
         "page": current_page,
         "test_page": True,
@@ -194,6 +216,7 @@ def start_test(request, test_id):
         return HttpResponse("Test not found or inactive")
     total_time = test.timer_count
     
+    instruction = Instruction.objects.get(test_id=test.id)
     pages = Page.objects.filter(test=test, is_active=True).order_by('page_number')
     if not pages.exists():
         return HttpResponse("No pages found for this test")
@@ -202,7 +225,8 @@ def start_test(request, test_id):
     context = {
         "test": test,
         "page": first_page,
-        "calculated_time": total_time
+        "calculated_time": total_time,
+        "instruction": instruction
     }
     response = HttpResponse(template.render(context, request))
     return response
@@ -311,6 +335,15 @@ def add_instruction(request, test_id):
     response = HttpResponse(template.render(context, request))
     return response
 
+def reset_password(request, test_id):
+    test = Test.objects.filter(id=test_id).first()
+    
+    test.password = None
+    test.save()
+    response =  HttpResponseRedirect(reverse("setup_pages_page", args=[test.id]))
+    response.set_cookie("password_changed", "True", max_age=5, httponly=True, secure=False)
+    return response
+
 
 def add_password(request, test_id):
     test = Test.objects.filter(id=test_id).first()
@@ -397,7 +430,6 @@ def edit_page(request, test_id, page_id):
     if not page:
         return HttpResponse("Page not found")
     template = loader.get_template("edit_page.html")
-    current_page = Page.objects.filter(id=page_id)
     test = page.test
     tests = Test.objects.filter(is_active=True)
     question_summary = get_page_question_summary(page.id)
@@ -405,11 +437,21 @@ def edit_page(request, test_id, page_id):
     questions = Question.objects.filter(page=page).order_by("number")
     question_ids = questions.values_list("id", flat=True)
     images = Images.objects.filter(question_id__in=question_ids)
-    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids).order_by("number")   
+    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids).order_by("number")
+
+
+    questions_list = list(questions.values())
+    images_list = list(images.values())
+    sub_list = list(sub_questions.values())
 
     if request.method == "POST":
         form_data = request.POST
-        edit_some_page(dict(form_data), page.id, request)
+        print(form_data)
+        question_ids = edit_some_page(dict(form_data), page_id, request)
+        if question_ids:
+            sq = Question.objects.filter(id__in=question_ids)
+            if sq.count() > 0:
+                sq.delete()
         return HttpResponseRedirect(reverse('setup_pages_page', args=[test.id]))
     context = {
         "page": page,
@@ -418,7 +460,10 @@ def edit_page(request, test_id, page_id):
         "questions": questions,
         "sub_questions": sub_questions,
         "images": images,
-        "question_summary": question_summary
+        "question_summary": question_summary,
+        "q_list": questions_list,
+        "i_list": images_list,
+        "s_list": sub_list
     }
     response = HttpResponse(template.render(context, request))
     return response
@@ -465,6 +510,8 @@ def setup_pages(request, test_id):
     
     if not test:
         return HttpResponse("Test or Test type not found")
+    
+    password_changed = request.COOKIES.get("password_changed", None) == "True"
     active_pages = Page.objects.filter(test=test, is_active=True).order_by('page_number')
     template = loader.get_template("setup_pages.html")
     instructions = Instruction.objects.filter(test=test)
@@ -483,7 +530,8 @@ def setup_pages(request, test_id):
         "test": test,
         "active_pages": active_pages,
         "instruction": instruction,
-        "password": password_exists
+        "password": password_exists,
+        "password_changed": password_changed
     }
     response = HttpResponse(template.render(context, request))
     return response

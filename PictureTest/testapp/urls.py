@@ -18,5 +18,6 @@ urlpatterns = [
     path('view_test2/<int:test_id>', views.test_page2, name="view_test_2"),
     path('add_instruction/<int:test_id>', views.add_instruction, name="new_instruction"),
     path('edit_instruction/<int:instruct_id>', views.edit_instruction, name="edit_instruction_page"),
-    path('set_password/<int:test_id>', views.add_password, name="set_password")
+    path('set_password/<int:test_id>', views.add_password, name="set_password"),
+    path('reset_password/<int:test_id>', views.reset_password, name="reset_password_page")
 ]
