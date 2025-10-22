@@ -6,31 +6,26 @@
 
 {% block content %}
 <div class="test-wrapper">
-    {% if not is_started %}
-    <div class="test-header">
-        <h2>{{ test.name }}</h2>
-        <p>Time: {{ calculated_time }} minutes</p>
-        <div class="test-actions">
-            {% if test.time_per_page %}
-            <a href="{% url 'view_test_2' test.id %}">Start Test</a>
-            {% else %}
-            <a href="{% url 'view_test_page' test.id page.page_number %}" class="btn-start">Start Test</a>
-            {% endif %}
-        </div>
+    <div class="content">
+        <h2>Total Time: {{test.timer_count}} minute(s)</h2>
+        <div class="heading">{{instruction.header|safe}}</div>
+        <div class="bodying">{{instruction.body|safe}}</div>
+        <div class="footing">{{instruction.footer|safe}}</div>
     </div>
-    {% else %}
-    <div class="test-header">
-        <h2>{{ test.name }} - In Progress</h2>
-        <p>Pages: {{ test.test_type.page_count }} </p>
-        <p>Time: {{ calculated_time }}</p>
-        <div class="test-actions">
-            {% if test.time_per_page %}
-            <a href="{% url 'view_test_2' test.id %}" class="btn-continue">Continue Test</a>
-            {% else %}
-            <a href="{% url 'view_test_page' test.id page.page_number %}" class="btn-continue">Continue Test</a>
-            {% endif %}
+    <div class="bottom">
+        <div>
+            <input type="checkbox" onchange="enableButton(event)" name="accept" id="accept">
+            <label for="accept">I acknowledge that I have reviewed the examination guidelines and hereby consent to the stated terms and conditions.</label>
         </div>
+        <button type="button" onclick="gotoPage(`{% if test.time_per_page %}{% url 'view_test_2' test.id %}{% else %}{% url 'view_test_page' test.id page.page_number %}{% endif %}`)" disabled>Start</button>
     </div>
-    {% endif %}
 </div>
+
+<script>
+    const enableButton = ({target}) => {
+        const button = document.querySelector("button");
+        button.disabled = !target.checked;
+        button.className = target.checked ? "jk12" : "";
+    }
+</script>
 {% endblock %}
