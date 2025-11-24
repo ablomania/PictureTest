@@ -34,7 +34,7 @@ Setup Pages
                   {% if not instruction %}
                   <a href="{% url 'new_instruction' test.id %}">New Instruction</a>
                   {% endif %}
-                  <a href="{% url 'add_page_page' test.id %}">New Page</a>
+                  <a class="np-link" href="{% url 'add_page_page' test.id %}">New Page</a>
                   {% if password %}
                   <a href="{% url 'set_password' test.id %}">Change Password</a>
                   <p class="kp2" onclick="openIt('password-confirm')" style="color: #007bff; font-weight: bold;">Reset Password</p>
@@ -86,6 +86,15 @@ Setup Pages
 
 <style>
     @media screen and (min-width: 768px) {
+      .np-link {
+        position: absolute;
+        right: 20px;
+        bottom: 30px;
+        background-color: #ccc;
+        padding: 10px;
+        border-radius: 5px;
+      }
+
   .item-card {
     position: relative;
     padding: 1rem;
