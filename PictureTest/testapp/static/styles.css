@@ -20,7 +20,9 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   animation: fadeIn 0.6s ease-out;
-  min-height: 70vh;
+  min-height: 66vh;
+  position: relative;
+ 
 }
 
 .links {
@@ -117,6 +119,7 @@
     padding: 2rem;
     margin: 2rem auto;
     max-width: 1000px;
+    margin-bottom: 50px;
   }
 
   .links {
@@ -724,6 +727,7 @@ body {
     padding-bottom: 25px;
     border-bottom: 2px solid var(--color-border-subtle);
     margin-bottom: 35px;
+    height: 60px;
 }
 
 .course-context {
@@ -739,6 +743,12 @@ body {
     color: var(--color-secondary);
     font-size: 2rem; /* Prominent page number */
     font-weight: 800;
+}
+
+.header-right-controls {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
 }
 
 .page-number-display {
@@ -859,6 +869,7 @@ body {
     display: flex;
     align-items: flex-start;
     gap: 15px;
+    align-items: center;
     padding: 12px 15px;
     margin-bottom: 8px;
     border-radius: 10px;
@@ -1358,7 +1369,7 @@ body {
     animation: fadeSlideIn 0.7s ease-out;
 }
 
-.test-done-wrapper::before {
+/* .test-done-wrapper::before {
     content: "";
     display: block;
     position: absolute;
@@ -1370,7 +1381,7 @@ body {
     background-size: 48px 48px;
     opacity: 0.12;
     pointer-events: none;
-}
+} */
 
 .test-done-wrapper h2 {
     font-size: 2.1rem;
