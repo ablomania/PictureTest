@@ -177,23 +177,31 @@ def test_page2(request, test_id):
     total_pages = Page.objects.filter(test=test).count()
     total_time = test.timer_count * 60
     time_per_page = test.time_per_page
+
+    current_page = Page.objects.filter(test=test, is_active=True).order_by("page_number").first()
+    
     
     if request.method == "POST":
         form_data = request.POST
         previous_page_number = form_data.get("page_number", None)
         if not previous_page_number: print("page number is null")
         else:
-            current_page_number = int(previous_page_number)
             current_page = Page.objects.filter(is_active=True, test=test, page_number__gt=previous_page_number).order_by("page_number").first()
             if not current_page:
                 return HttpResponseRedirect(reverse("test_done_page", args=[test_id]))
     else:
         current_page = Page.objects.filter(test=test, is_active=True).order_by("page_number").first()
     
-    print("current page : ", current_page.page_number)
-    print("per page: ", test.time_per_page)
+    questions = Question.objects.filter(page_id=current_page.id).order_by("number")
+    question_ids = questions.values_list("id", flat=True)
+    sub_questions = SubQuestion.objects.filter(question_id__in=question_ids).order_by("number")
+    images = Images.objects.filter(question_id__in=question_ids)
+    
     template = loader.get_template("test_page.html")
     context = {
+        "questions": questions,
+        "sub_questions": sub_questions,
+        "images": images,
         "test": current_page.test,
         "page": current_page,
         "test_page": True,
