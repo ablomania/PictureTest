@@ -1,0 +1,253 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}
+Setup
+{% endblock %}
+
+{% block content %}
+<div class="setup-wrapper">
+    <div class="aw3">
+        <span> &rarr; </span>
+        <a href="{% url 'setup_tests_page' %}">Tests</a>
+    </div>
+    <div class="setup-body">
+        <div class="items-wrapper">
+            <div class="top">
+                <h2>All Tests</h2>
+                <div class="links">
+                  <a href="{% url 'trash_page' %}">Trash 🗑</a>
+                    <a href="{% url 'add_test_page' %}">New Test</a>
+                </div>
+            </div>
+            
+            <div class="items-grid">
+            {% for test in active_tests %}
+                <a href="{% url 'setup_pages_page' test.id %}" class="item-card">
+                    <p class="test_name"><strong>{{ test.name }}</strong></p>
+                    <p><strong>Time Allocated: </strong>{{ test.timer_count }} {% if test.timer_count > 1 %}minutes{% else %}minute{% endif %}</p>
+                    <p><strong>Pages: </strong>{{ test.page_count }}</p>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" class="card-checkbox" data-test-id="{{ test.id }}">
+                    </div>
+                </a>
+            {% empty %}
+                <p>No active tests found.</p>
+            {% endfor %}
+        </div>
+
+            <div class="bulk-menu" style="display: none;">
+                <button id="select-all">Select All</button>
+                <button id="confirm-action">Delete Selection</button>
+            </div>
+            <form id="bulk-form" method="post" action="" style="display: none;">
+                {% csrf_token %}
+                <div id="selected-tests-container"></div>
+            </form>
+
+            <!-- Confirmation modal for delete action -->
+            <div id="delete-confirm-modal" class="confirm-modal" style="display: none;">
+                <div class="modal-box">
+                    <h3>Confirm Delete</h3>
+                    <p>Are you sure you want to delete the selected tests?</p>
+                    <div class="modal-buttons">
+                        <button type="button" id="modal-confirm">Yes, Delete</button>
+                        <button type="button" id="modal-cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+         {# ✅ Pagination controls #}
+         <div class="pagination">
+             {% if active_tests.has_previous %}
+                 <a href="?page={{ active_tests.previous_page_number }}">Previous</a>
+             {% endif %}
+             <br><br>
+             {% for num in active_tests.paginator.page_range %}
+                 {% if num == active_tests.number %}
+                     <span class="current"> Page {{ num }}</span>
+                 {% else %}
+                     <a href="?page={{ num }}">Page {{ num }}</a>
+                 {% endif %}
+             {% endfor %}
+ 
+             {% if active_tests.has_next %}
+                 <a href="?page={{ active_tests.next_page_number }}">Next</a>
+             {% endif %}
+         </div>
+     </div>
+ </div>
+ <style>
+     @media screen and (min-width: 768px) {
+  .item-card {
+    position: relative;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .item-card:hover {
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  }
+
+  .checkbox-wrapper {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .card-checkbox {
+    transform: scale(1.2);
+    cursor: pointer;
+  }
+
+  .bulk-menu {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #f0f8ff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .bulk-menu button {
+    margin: 0 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .bulk-menu button:hover {
+    background-color: #0056b3;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  /* confirm modal styles */
+  .confirm-modal {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  .confirm-modal .modal-box {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  .confirm-modal .modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .confirm-modal .modal-buttons button {
+    padding: 0.6rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #modal-confirm { background: #d9534f; color: #fff; }
+  #modal-cancel { background: #6c757d; color: #fff; }
+ }
+ 
+ </style>
+ 
+ <script>
+const checkboxes = document.querySelectorAll('.card-checkbox');
+const bulkMenu = document.querySelector('.bulk-menu');
+const selectAllBtn = document.getElementById('select-all');
+const confirmBtn = document.getElementById('confirm-action');
+const form = document.getElementById('bulk-form');
+const container = document.getElementById('selected-tests-container');
+const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+const modalConfirmBtn = document.getElementById('modal-confirm');
+const modalCancelBtn = document.getElementById('modal-cancel');
+
+// Helper to create hidden input
+function createHiddenInput(id) {
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'selected_tests';
+  input.value = id;
+  input.dataset.testId = id;
+  return input;
+}
+
+// Sync form with checked boxes
+function syncFormInputs() {
+  container.innerHTML = ''; // Clear previous inputs
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      container.appendChild(createHiddenInput(cb.dataset.testId));
+    }
+  });
+  bulkMenu.style.display = container.children.length > 0 ? 'block' : 'none';
+}
+
+// Checkbox change listener
+checkboxes.forEach(cb => {
+  cb.addEventListener('change', syncFormInputs);
+});
+
+// Select all button
+selectAllBtn.addEventListener('click', () => {
+  checkboxes.forEach(cb => cb.checked = true);
+  syncFormInputs();
+});
+
+// Confirm button shows modal instead of immediate submit
+confirmBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (container.children.length > 0) {
+    deleteConfirmModal.style.display = 'flex';
+  } else {
+    alert("No tests selected.");
+  }
+});
+
+// Modal confirm button (Yes, Delete)
+modalConfirmBtn.addEventListener('click', () => {
+  form.submit();
+});
+
+// Modal cancel button (No, Cancel) - hide modal and clear selection + form
+modalCancelBtn.addEventListener('click', () => {
+  deleteConfirmModal.style.display = 'none';
+  checkboxes.forEach(cb => cb.checked = false);
+  container.innerHTML = '';
+  bulkMenu.style.display = 'none';
+  if (form.reset) form.reset();
+});
+
+// Close modal if clicked outside of the box
+window.addEventListener('click', (event) => {
+  if (event.target === deleteConfirmModal) {
+    deleteConfirmModal.style.display = 'none';
+  }
+});
+ 
+ </script>
+ 
+{% endblock %}

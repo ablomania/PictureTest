@@ -1,0 +1,320 @@
+{% extends 'main.html' %}
+{% load static %}
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Base mobile styles (minimal) */
+.dashboard-wrapper {
+  padding: 1rem;
+  margin: 1rem;
+}
+
+/* Tablet and desktop styles */
+@media screen and (min-width: 768px) {
+  .dashboard-wrapper {
+    width: 80%;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background-color: #fdfdfd;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    animation: fadeIn 0.6s ease-out;
+    margin-bottom: 100px;
+    margin-top: 5px;
+    min-height: 450px;
+  }
+ 
+
+  .dashboard-wrapper h2 {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+
+  .tests-overview h3 {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    color: #444;
+  }
+  .sc1{
+    color: #0056b3;
+    &:hover{
+        color: green;
+    }
+  }
+
+  .tests-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .test-item {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: slideUp 0.5s ease-out;
+
+    h4 {
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  .test-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  }
+
+  .test-item h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+    color: #007bff;
+  }
+
+  .test-item p {
+    margin: 0.3rem 0;
+    font-size: 0.95rem;
+    color: #555;
+  }
+
+  .test-actions button{
+    display: inline-block;
+    margin-top: 0.8rem;
+    padding: 0.5rem 1rem;
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+    border: 1px #ddd solid;
+  }
+
+
+  .test-actions button:hover{
+    background-color: #0056b3;
+    cursor: pointer;
+  }
+
+  .tests-overview p {
+    font-size: 1rem;
+    color: #666;
+    text-align: center;
+  }
+
+  .tests-overview a {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  /* Error-Node */
+
+  #error-node {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    top: 0;
+    left: 0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    div {
+      position: absolute;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 30%;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 10px;
+      padding: 20px;
+
+      button {
+        padding: 10px;
+        background-color: lightcoral;
+        color: #fff;
+        border: #ddd solid 1px;
+        border-radius: 10px;
+
+        &:hover {
+          background-color: coral;
+          cursor: pointer;
+          padding: 15px;
+        }
+      }
+    }
+    img {
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 10px;
+      border: green 2px solid;
+    }
+  }
+
+  /* Modal */
+  #password-modal {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #fff;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 100px;
+    background-color: gold;
+
+    img {
+      margin-left: auto;
+      margin-right: auto;
+      opacity: 0.5;
+      border-radius: 10px;
+      border: green 2px solid;
+    }
+
+    .test-name {
+      width: 100%;
+      text-align: center;
+    }
+    
+    p {
+      width: 100%;
+      text-align: center;
+    }
+
+    form {
+      width: 30%;
+      padding: 15px;
+      align-items: center;
+      margin: auto;
+      margin-top: 5px;
+
+      .field-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        input[type=password] {
+          height: 40px;
+          border-radius: 10px;
+          border: 1px #d7ecff solid;
+          padding-left: 10px;
+          background-color: lightyellow;
+        }
+      }
+    }
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+</style>
+<div class="dashboard-wrapper">
+    {% if error_message %}
+    <div id="error-node" class="error-overlay">
+      <div class="error-box">
+        <img src="{% static 'images/alert.gif' %}" alt="Alert" width="120" height="120">
+        <p><strong>Incorrect Password. Please Try Again.</strong></p>
+        <button type="button" class="btn-close" onclick="closeErrorNode()">Close</button>
+      </div>
+    </div>
+    {% endif %}
+
+    <h2>Dashboard 
+        <span class="sc1" onclick="localStorage.clear();" title="Clear local storage">&#x2702;</span>
+    </h2>
+
+    <!-- Active Tests Section -->
+    <div class="tests-overview">
+        <h3 style="text-align: center;">Tests</h3>
+        {% if active_tests %}
+            <div class="tests-grid">
+                {% for test in active_tests %}
+                    <div class="test-item">
+                        <h4>{{ test.name }}</h4>
+                        <p><strong>Pages:</strong> {{ test.page_count }}</p>
+                        <p><strong>Time:</strong> {{ test.timer_count }} min</p>
+                        <p><strong>Status:</strong> {% if test.password %}🔒 Locked{% else %}✅ Open{% endif %}</p>
+                        <div class="test-actions">
+                            <button type="button" class="btn-start"
+                                onclick="{% if test.password %} loadPasswordModal('{{test.id}}', '{{test.name}}') {% else %} gotoPage(`{% url 'start_test_page' test.id %}`) {% endif %}">
+                                Start Test
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No active tests available.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div id="password-modal" style="display: none;">
+  <img src="{% static 'images/padlock.gif' %}" alt="Img" width="200" height="200">
+  <h2 class="test-name"></h2>
+  <p><strong>Access to this examination is restricted. Kindly enter the designated password to proceed.</strong></p>
+  <form action="" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="test_id" class="test-id">
+    <div class="field-wrapper">
+      <label for="password">Password</label>
+      <input type="password" name="password" id="password" required autofocus>
+    </div>
+    <div class="buttons">
+      <button type="submit">Submit</button>
+      <button type="button" onclick="closeModal()">Discard</button>
+    </div>
+  </form>
+</div>
+
+<script>
+
+  const loadPasswordModal = (testId, testName) => {
+    const modal = document.getElementById("password-modal");
+    const name = modal.querySelector(".test-name");
+    const input = modal.querySelector(".test-id");
+
+    name.textContent = testName;
+    input.value = testId;
+    modal.style.display = "flex";
+  }
+
+  const closeErrorNode = () => {
+    document.getElementById("error-node").style.display = "none";
+  }
+
+  const closeModal = () => {
+    const modal = document.getElementById("password-modal");
+    const form = modal.querySelector("form");
+    form.reset();
+    modal.style.display = "none";
+  }
+
+  
+</script>
+
+
+{% endblock %}

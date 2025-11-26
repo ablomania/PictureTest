@@ -1,0 +1,435 @@
+{% extends 'main.html' %}
+
+{% load static %}
+{% block title %}
+Setup Pages
+{% endblock %}
+
+{% block content %}
+<div class="setup-wrapper">
+    <div class="aw3">
+        <span> &rarr; </span>
+        <a href="{% url 'setup_tests_page' %}">Tests</a>
+        <span> &rarr; </span>
+        <span>{{test.name}}</span>
+        <span> &rarr; </span>
+        <a href="{% url 'setup_pages_page' test.id %}">Pages</a>
+    </div>
+    {% if password_changed %}
+    <div id="changed">
+      <div>
+        <img src="{% static 'images/fist-bump.gif' %}" alt="Img" width="200" height="200">
+        <p>Password Reset Success!</p>
+        <button type="button" onclick="closeIt('changed')"
+        >Close</button>
+      </div>
+    </div>
+    {% endif %}
+    <div class="setup-body">
+        <div class="items-wrapper">
+            <div class="top">
+                <h2>Pages of {{test.name}}</h2>
+                <div class="links">
+                  <a href="{% url 'trash_page' %}">Trash 🗑</a>
+                  <a class="tt-link" href="{% url 'edit_test_page' test.id %}" style="color: #fff; background-color: purple;">Edit {{test.name}}</a>
+                  {% if not instruction %}
+                  <a class="tt-link" href="{% url 'new_instruction' test.id %}" style="color: #fff; background-color: turquoise;">New Instruction</a>
+                  {% endif %}
+                  {% if password %}
+                  <a class="tt-link" href="{% url 'set_password' test.id %}" style="color: #fff; background-color: violet;">Change Password</a>
+                  <p class="kp2 tt-link" onclick="openIt('password-confirm')" style="color: #fff; font-weight: bold; background-color: darkolivegreen;">Reset Password</p>
+                  {% else %}
+                  <a class="tt-link" href="{% url 'set_password' test.id %}" style="color: #fff; background-color: green;">Set password</a>
+                  {% endif %}
+                  <a class="np-link tt-link" href="{% url 'add_page_page' test.id %}" style="color: #fff;">New Page</a>
+                </div>
+            </div>
+            {% if instruction %}
+            <div class="instr">
+              <p>Instructions</p>
+              <a href="{% url 'edit_instruction_page' instruction.id %}">Edit</a>
+            </div>
+            {% endif %}
+            <div class="items-grid">
+                {% for page in page_obj %}
+                    <a href="{% url 'edit_page_page' test.id page.id %}" class="item-card">
+                        {% with first_question=page.question_set.first %}
+                            {% if first_question and first_question.images_set.first %}
+                                <img class="trk" src="{{ first_question.images_set.first.image.url }}"
+                                    alt="Question image" style="max-width:200px; max-height:100px;">
+                            {% endif %}
+                        {% endwith %}
+                        <p>
+                            <strong>Page {{ page.page_number }}</strong><br>
+                            {{ page.question_set.count }} Questions
+                        </p>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="card-checkbox" data-test-id="{{ page.id }}">
+                        </div>
+                    </a>
+                {% empty %}
+                    <p>No active pages found.</p>
+                {% endfor %}
+            </div>
+            <br>
+            {# ✅ Pagination controls #}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ active_pages.previous_page_number }}">Previous</a>
+                {% endif %}
+
+                <br><span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                {% if active_pages.has_next %}
+                    <a href="?page={{ active_pages.next_page_number }}">Next</a>
+                {% endif %}
+            </div>
+            </div>
+            <div class="bulk-menu" style="display: none;">
+                <button id="select-all">Select All</button>
+                <button id="confirm-action">Delete Selection</button>
+            </div>
+            <form id="bulk-form" method="post" action="" style="display: none;">
+                {% csrf_token %}
+                <div id="selected-tests-container"></div>
+            </form>
+
+            <!-- Confirmation modal for delete action -->
+            <div id="delete-confirm-modal" class="confirm-modal" style="display: none;">
+                <div class="modal-box">
+                    <h3>Confirm Delete</h3>
+                    <p>Are you sure you want to delete the selected pages?</p>
+                    <div class="modal-buttons">
+                        <button type="button" id="modal-confirm">Yes, Delete</button>
+                        <button type="button" id="modal-cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="password-confirm" style="display: none;">
+      <div>
+        <h2>{{test.name}}</h2>
+        <p><strong>Task: </strong>Reset Password</p>
+        <p><em>Are you sure?</em></p>
+        <div class="buttons">
+          <button type="button" onclick="gotoPage(`{% url 'reset_password_page' test.id %}`)">Yes</button>
+          <button type="button" onclick="closeIt('.password-confirm')">No</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<style>
+    @media screen and (min-width: 768px) {
+      .np-link {
+        /* position: absolute;
+        right: 33px;
+        top: 90px; */
+        margin-left: 30px;
+        background-color: #007bff;
+      }
+      .tt-link {
+        padding: 10px;
+        border-radius: 5px;
+      }
+
+  .item-card {
+    position: relative;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .item-card:hover {
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  }
+
+  .checkbox-wrapper {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .card-checkbox {
+    transform: scale(1.2);
+    cursor: pointer;
+  }
+
+  .bulk-menu {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #f0f8ff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .kp2:hover{
+    cursor: pointer;
+  }
+
+  .bulk-menu button {
+    margin: 0 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .bulk-menu button:hover {
+    background-color: #0056b3;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .instr {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 30px;
+    border: 1px #d7ecff solid;
+    border-radius: 10px;
+
+    a {
+      color: #007bff;
+    }
+  }
+
+  .password-confirm {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    z-index: 99;
+    top: 0;
+    left: 0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    div {
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 30%;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 10px;
+      padding: 20px;
+    }
+  }
+
+  #changed {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    z-index: 99;
+    top: 0;
+    left: 0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    div {
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 30%;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 10px;
+      padding: 20px;
+
+      button {
+        padding: 10px;
+        background-color: lightcoral;
+        color: #fff;
+        border: #ddd solid 1px;
+        border-radius: 10px;
+
+        &:hover {
+          background-color: coral;
+          cursor: pointer;
+          padding: 15px;
+        }
+      }
+    }
+    img {
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 10px;
+      border: green 2px solid;
+    }
+  }
+
+  .confirm-modal {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+
+    .modal-box {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+      h3 {
+        margin-bottom: 1rem;
+        color: #333;
+      }
+
+      p {
+        margin-bottom: 2rem;
+        color: #666;
+      }
+
+      .modal-buttons {
+        display: flex;
+        justify-content: space-around;
+        flex-wrap: wrap;
+
+        button {
+          padding: 0.7rem 1.5rem;
+          margin: 0.5rem;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-weight: bold;
+          transition: background-color 0.3s ease;
+
+          &:first-child {
+            background-color: #e74c3c;
+            color: white;
+
+            &:hover {
+              background-color: #c0392b;
+            }
+          }
+
+          &:last-child {
+            background-color: #3498db;
+            color: white;
+
+            &:hover {
+              background-color: #2980b9;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+</style>
+
+<script>
+  const checkboxes = document.querySelectorAll('.card-checkbox');
+const bulkMenu = document.querySelector('.bulk-menu');
+const selectAllBtn = document.getElementById('select-all');
+const confirmBtn = document.getElementById('confirm-action');
+const form = document.getElementById('bulk-form');
+const container = document.getElementById('selected-tests-container');
+const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+const modalConfirmBtn = document.getElementById('modal-confirm');
+const modalCancelBtn = document.getElementById('modal-cancel');
+
+// Helper to create hidden input
+function createHiddenInput(id) {
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'selected_tests';
+  input.value = id;
+  input.dataset.testId = id;
+  return input;
+}
+
+// Sync form with checked boxes
+function syncFormInputs() {
+  container.innerHTML = ''; // Clear previous inputs
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      container.appendChild(createHiddenInput(cb.dataset.testId));
+    }
+  });
+  bulkMenu.style.display = container.children.length > 0 ? 'block' : 'none';
+}
+
+// Checkbox change listener
+checkboxes.forEach(cb => {
+  cb.addEventListener('change', syncFormInputs);
+});
+
+// Select all button
+selectAllBtn.addEventListener('click', () => {
+  checkboxes.forEach(cb => cb.checked = true);
+  syncFormInputs();
+});
+
+// Confirm button submits form
+confirmBtn.addEventListener('click', () => {
+  if (container.children.length > 0) {
+    // Show confirmation modal
+    deleteConfirmModal.style.display = 'flex';
+  } else {
+    alert("No tests selected.");
+  }
+});
+
+// Modal confirm button (Yes, Delete)
+modalConfirmBtn.addEventListener('click', () => {
+  form.submit();
+});
+
+// Modal cancel button (No, Cancel)
+modalCancelBtn.addEventListener('click', () => {
+  // Hide modal
+  deleteConfirmModal.style.display = 'none';
+  // Uncheck all page checkboxes
+  checkboxes.forEach(cb => cb.checked = false);
+  // Clear hidden inputs in the form
+  container.innerHTML = '';
+  // Hide bulk menu and reset the form if possible
+  bulkMenu.style.display = 'none';
+  if (form.reset) form.reset();
+});
+
+// Close modal if clicked outside of the box
+window.addEventListener('click', (event) => {
+  if (event.target === deleteConfirmModal) {
+    deleteConfirmModal.style.display = 'none';
+  }
+});
+
+</script>
+{% endblock %}

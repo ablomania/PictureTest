@@ -1,0 +1,155 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}
+Setup Test Types
+{% endblock %}
+
+{% block content %}
+<div class="setup-wrapper">
+    <div class="aw3">
+        <a href="{% url 'setup_types_page' %}">Types</a>
+    </div>
+    <div class="setup-body">
+        <div class="items-wrapper">
+            <div class="top">
+                <h2>All Test Types</h2>
+                <div class="links">
+                    <a href="{% url 'add_type_page' %}">New Test Type</a>
+                </div>
+            </div>
+            <div class="items-grid">
+                {% for type in active_types %}
+                <a href="{% url 'setup_tests_page' %}" class="item-card">
+                    <p><strong>{{ type.name }}</strong></p>
+                    <p><strong>Time Allocated: </strong>{{ type.timer_count }}</p>
+                    <p><strong>Pages: </strong>{{ type.page_count }}</p>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" class="card-checkbox" data-test-id="{{ }}">
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            <div class="bulk-menu" style="display: none;">
+                <button id="select-all">Select All</button>
+                <button id="confirm-action">Delete Selection</button>
+            </div>
+            <form id="bulk-form" method="post" action="" style="display: none;">
+                {% csrf_token %}
+                <div id="selected-tests-container"></div>
+            </form>
+        </div>
+    </div>
+</div>
+<style>
+    @media screen and (min-width: 768px) {
+  .item-card {
+    position: relative;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .item-card:hover {
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  }
+
+  .checkbox-wrapper {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  .card-checkbox {
+    transform: scale(1.2);
+    cursor: pointer;
+  }
+
+  .bulk-menu {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #f0f8ff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .bulk-menu button {
+    margin: 0 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .bulk-menu button:hover {
+    background-color: #0056b3;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+</style>
+
+<script>
+  const checkboxes = document.querySelectorAll('.card-checkbox');
+const bulkMenu = document.querySelector('.bulk-menu');
+const selectAllBtn = document.getElementById('select-all');
+const confirmBtn = document.getElementById('confirm-action');
+const form = document.getElementById('bulk-form');
+const container = document.getElementById('selected-tests-container');
+
+// Helper to create hidden input
+function createHiddenInput(id) {
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'selected_tests';
+  input.value = id;
+  input.dataset.testId = id;
+  return input;
+}
+
+// Sync form with checked boxes
+function syncFormInputs() {
+  container.innerHTML = ''; // Clear previous inputs
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      container.appendChild(createHiddenInput(cb.dataset.testId));
+    }
+  });
+  bulkMenu.style.display = container.children.length > 0 ? 'block' : 'none';
+}
+
+// Checkbox change listener
+checkboxes.forEach(cb => {
+  cb.addEventListener('change', syncFormInputs);
+});
+
+// Select all button
+selectAllBtn.addEventListener('click', () => {
+  checkboxes.forEach(cb => cb.checked = true);
+  syncFormInputs();
+});
+
+// Confirm button submits form
+confirmBtn.addEventListener('click', () => {
+  if (container.children.length > 0) {
+    form.submit();
+  } else {
+    alert("No tests selected.");
+  }
+});
+
+</script>
+{% endblock %}

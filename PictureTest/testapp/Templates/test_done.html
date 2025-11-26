@@ -1,0 +1,166 @@
+{% extends 'main.html' %}
+
+{% load static %}
+
+{% block title %}
+Test Complete
+{% endblock %}
+
+{% block content %}
+<div class="institution-wrap">
+  <header class="inst-header">
+    <div class="crest" aria-hidden="true">
+      <img src="{% static 'images/logo.jpg' %}" alt="" width="50px" height="60px" style="border-radius: 5px;" srcset="">
+    </div>
+    <div class="inst-meta">
+      <h1 class="inst-name">Ghana College of Physicians and Surgeons</h1>
+      <p class="inst-sub">Assessment Centre • End Of Test</p>
+    </div>
+  </header>
+
+  <main class="done-main">
+    <section class="done-card">
+      <h2 class="done-title">Assessment Complete</h2>
+
+      {% if test_name %}
+        <p class="muted">Test:</p>
+        <h3 class="test-name">{{ test_name }}</h3>
+      {% endif %}
+        <p class="lead">Thank you for completing the assessment. Your invigilators will guide you on what to do next.</p>
+
+      <div class="actions">
+        {% if certificate_url %}
+          <a href="{{ certificate_url }}" class="btn primary" target="_blank" rel="noopener">Download Certificate</a>
+        {% endif %}
+        {% if review_url %}
+          <a href="{{ review_url }}" class="btn outline">Review Answers</a>
+        {% endif %}
+        <a href="{% url 'dashboard_page' %}" class="btn ghost">Back to Dashboard</a>
+      </div>
+
+      <div class="help">
+        <p>If you need help, contact your supervisor or Academic Affairs</a></p>
+      </div>
+    </section>
+
+    <!-- <aside class="info-panel">
+      <h4>What happens next?</h4>
+      <ul>
+        <li>Results are stored in your learner profile.</li>
+        <li>Certificates (if applicable) are available immediately.</li>
+        <li>Contact your instructor for queries about grading.</li>
+      </ul>
+    </aside> -->
+  </main>
+</div>
+
+<style>
+  @media screen and (min-width: 768px) {
+    .institution-wrap {
+      max-width: 1000px;
+      margin: 3.5rem auto;
+      padding: 1rem;
+    }
+
+    .inst-header {
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom: 1.2rem;
+    }
+    .crest { width:56px; height:56px; }
+    .inst-name {
+      margin:0;
+      font-size:1.25rem;
+      color:#08306B;
+      letter-spacing:0.2px;
+    }
+    .inst-sub {
+      margin:0;
+      color:#627488;
+      font-size:0.95rem;
+    }
+
+    .done-main {
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap:20px;
+      align-items:start;
+    }
+
+    .done-card {
+      background: linear-gradient(180deg,#ffffff,#fbfdff);
+      border:1px solid #e6eef9;
+      padding:1.6rem;
+      border-radius:10px;
+      box-shadow:0 8px 20px rgba(6,22,40,0.06);
+    }
+
+    .done-title {
+      margin:0 0 8px 0;
+      color:#08306B;
+      font-size:1.2rem;
+    }
+    .test-name { margin:0 0 10px 0; color:#0b3a66; }
+
+    .score-box {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin: 12px 0;
+    }
+    .score-num {
+      font-size:2.4rem;
+      font-weight:700;
+      color:#12427a;
+      background:#eaf4ff;
+      padding:10px 18px;
+      border-radius:8px;
+      box-shadow:0 6px 14px rgba(8,48,107,0.06);
+    }
+    .score-meta { color:#4b6b8a; font-weight:600; }
+
+    .lead, .score-note { color:#425b76; margin:10px 0 0 0; }
+
+    .actions { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn {
+      display:inline-block;
+      padding:10px 14px;
+      border-radius:8px;
+      text-decoration:none;
+      font-weight:600;
+      text-align:center;
+      min-width:120px;
+    }
+    .btn.primary { background:#08306B; color:#fff; box-shadow:0 6px 14px rgba(8,48,107,0.08); }
+    .btn.primary:hover { background:#062a52; }
+    .btn.outline { border:1px solid #08306B; color:#08306B; background:transparent; }
+    .btn.ghost { background:#f6fbff; color:#08306B; border:1px solid #e6eef9; }
+
+    .help { margin-top:14px; color:#627488; font-size:0.95rem; }
+
+    .info-panel {
+      background:#ffffff;
+      border:1px solid #f0f3f7;
+      padding:1rem;
+      border-radius:10px;
+      color:#405a75;
+      box-shadow:0 6px 18px rgba(6,22,40,0.03);
+      font-size:0.95rem;
+    }
+    .info-panel h4 { margin-top:0; color:#0b3a66; }
+    .info-panel ul { margin:8px 0 0 18px; color:#556b84; }
+  }
+
+  /* Mobile adjustments */
+  @media screen and (max-width: 767px) {
+    .done-main { display:block; }
+    .inst-header { gap:10px; margin-bottom: 0.8rem; }
+    .done-card { padding:1rem; border-radius:8px; }
+    .score-num { font-size:1.6rem; padding:8px 12px; }
+    .actions { flex-direction:column; align-items:stretch; }
+    .btn { width:100%; }
+    .info-panel { margin-top:12px; }
+  }
+</style>
+{% endblock %}

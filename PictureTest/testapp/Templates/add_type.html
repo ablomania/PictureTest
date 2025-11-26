@@ -1,0 +1,45 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block title %}
+New Test Type
+{% endblock %}
+
+{% block content %}
+<div class="add-test-wrapper">
+    <h2>New Test Type</h2>
+    <div class="add-test-body">
+        <div class="left-section">
+            <img src="{% static 'images/ttt.jpg' %}" alt="" width="400px">
+        </div>
+        <div class="right-section">
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="field-wrapper">
+                    <label for="name">Test Type Name:</label>
+                    <input type="text" name="name" id="name" required>
+                </div>
+                
+                <div class="field-wrapper">
+                    <label for="unit">Time Unit Used: </label>
+                    <select name="unit" id="unit" required>
+                        <option value="Seconds">Seconds</option>
+                        <option value="Minutes">Minutes</option>
+                        <option value="Hours">Hours</option>
+                    </select>
+                </div>
+                
+                
+                <div class="field-wrapper">
+                    <label for="description">Description (optional):</label>
+                    <textarea name="description" id="description" cols="30" rows="10"></textarea>
+                <div class="buttons">
+                    <button type="submit">Create Test Type</button>
+                    <a href="{% url 'setup_types_page' %}">Cancel</a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

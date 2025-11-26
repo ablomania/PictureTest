@@ -1,0 +1,68 @@
+{% extends 'main.html' %}
+{% load static %}
+{% block title %}Trash{% endblock %}
+
+{% block content %}
+<div class="trash-wrapper">
+  <div class="top">
+    <h2>Trash</h2>
+    <p>All inactive objects grouped by type</p>
+  </div>
+
+  <div class="trash-sections">
+    <section class="trash-section">
+      <h3>Inactive Tests ({{ inactive_tests.count }})</h3>
+      {% if inactive_tests %}
+      <div class="trash-grid">
+        {% for test in inactive_tests %}
+        <article class="trash-item">
+          <div class="trash-head">
+            <strong>{{ test.name }}</strong>
+            <span class="meta">Pages: {{ test.page_count }} · Created: {{ test.date_created|date:"Y-m-d" }}</span>
+          </div>
+          <div class="trash-actions">
+            <a href="{% url 'edit_test_page' test.id %}">Edit</a>
+            <a href="{% url 'setup_pages_page' test.id %}">Pages</a>
+            <form method="post" action="{% url 'trash_page' %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="restore_test_id" value="{{ test.id }}">
+              <button type="submit" class="restore-btn">Restore</button>
+            </form>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p class="empty">No inactive tests.</p>
+      {% endif %}
+    </section>
+
+    <section class="trash-section">
+      <h3>Inactive Pages ({{ inactive_pages.count }})</h3>
+      {% if inactive_pages %}
+      <div class="trash-grid">
+        {% for page in inactive_pages %}
+        <article class="trash-item">
+          <div class="trash-head">
+            <strong>Page {{ page.page_number }}</strong>
+            <span class="meta">Test: {{ page.test.name }} · Questions: {{ page.question_set.count }}</span>
+          </div>
+          <div class="trash-actions">
+            <a href="{% url 'edit_page_page' page.test.id page.id %}">Edit</a>
+            <a href="{% url 'setup_pages_page' page.test.id %}">View Pages</a>
+            <form method="post" action="{% url 'trash_page' %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="restore_page_id" value="{{ page.id }}">
+              <button type="submit" class="restore-btn">Restore</button>
+            </form>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p class="empty">No inactive pages.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
